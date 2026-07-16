@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISM — Multi-Brand Style Intelligence Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#E7004C; --accent-soft:#E7004C22;
+  --bg:#f4f5f9; --panel:#ffffff; --sidebar:#12131a; --sidebar-text:#e8e9f0;
+  --text:#1c1e26; --muted:#6b7280; --border:#e6e8ee;
+  --radius:16px; --shadow:0 6px 20px rgba(20,20,40,.06); --shadow-hover:0 12px 28px rgba(20,20,40,.12);
+}
+[data-theme="dark"]{
+  --bg:#0d0e13; --panel:#171923; --sidebar:#0a0b10; --sidebar-text:#e8e9f0;
+  --text:#eef0f5; --muted:#9aa0b0; --border:#262a36;
+  --shadow:0 6px 20px rgba(0,0,0,.4); --shadow-hover:0 12px 30px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;transition:background .3s,color .3s;-webkit-font-smoothing:antialiased;}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+  width:260px; background:var(--sidebar); color:var(--sidebar-text);
+  display:flex; flex-direction:column; position:sticky; top:0; height:100vh; flex-shrink:0;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.sidebar-header{ padding:26px 22px 18px; border-bottom:1px solid rgba(255,255,255,.08); }
+.logo-mark{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:22px; letter-spacing:1px; }
+.logo-mark .prism-icon{ width:26px;height:26px; border-radius:6px; background:linear-gradient(135deg,#E7004C,#4D4084,#93D500,#0092BC); }
+.sidebar-sub{ font-size:11px; color:#9aa0b0; margin-top:6px; letter-spacing:.5px; }
+
+.brand-nav{ flex:1; overflow-y:auto; padding:14px 12px; }
+.brand-nav-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:1.5px; color:#6b7280; padding:10px 10px 6px; }
+.brand-item{
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  background:transparent; border:none; color:var(--sidebar-text);
+  padding:11px 12px; border-radius:10px; cursor:pointer; font-family:'Montserrat',sans-serif;
+  font-size:13.5px; font-weight:600; margin-bottom:4px; transition:all .18s ease;
+}
+.brand-item:hover{ background:rgba(255,255,255,.06); }
+.brand-item.active{ background:var(--accent); color:#fff; }
+.brand-dot{ width:14px;height:14px;border-radius:50%; flex-shrink:0; border:1px solid rgba(255,255,255,.25); }
+.brand-item .bname{ display:flex; flex-direction:column; }
+.brand-item .bsub{ font-size:10px; font-weight:500; opacity:.65; }
+
+.sidebar-footer{ padding:16px 20px; border-top:1px solid rgba(255,255,255,.08); }
+.theme-row{ display:flex; align-items:center; justify-content:space-between; }
+.theme-label{ font-size:12px; font-weight:600; color:#9aa0b0; }
+.switch{ position:relative; width:46px; height:24px; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; cursor:pointer; inset:0; background:#3a3d4a; border-radius:24px; transition:.25s; }
+.slider::before{ content:""; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.25s; }
+input:checked + .slider{ background:var(--accent); }
+input:checked + .slider::before{ transform:translateX(22px); }
+
+/* ===== MAIN ===== */
+.main-wrap{ flex:1; min-width:0; }
+main{ max-width:1200px; margin:0 auto; padding:36px 32px 70px; }
+
+.hero{ border-radius:var(--radius); padding:32px 34px; color:#fff; position:relative; overflow:hidden; box-shadow:var(--shadow); margin-bottom:8px; }
+.hero::after{ content:""; position:absolute; right:-50px; top:-50px; width:200px;height:200px;border-radius:50%; background:rgba(255,255,255,.12); }
+.hero-eyebrow{ text-transform:uppercase; letter-spacing:2px; font-size:11.5px; font-weight:700; opacity:.9; }
+.hero-name{ font-size:32px; font-weight:800; margin:6px 0 4px; }
+.hero-tagline{ font-size:13.5px; font-weight:500; opacity:.92; max-width:640px; }
+.audience-switch{ margin-top:14px; display:none; gap:8px; }
+.audience-switch.show{ display:flex; }
+.aud-btn{ background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.5); color:#fff; padding:6px 16px; border-radius:999px; font-family:'Montserrat',sans-serif; font-weight:600; font-size:11.5px; cursor:pointer; transition:all .2s; }
+.aud-btn.active{ background:#fff; color:var(--text); }
+
+.note-banner{
+  margin:14px 0 0; font-size:11.5px; color:var(--muted); background:var(--panel); border:1px dashed var(--border);
+  border-radius:10px; padding:10px 14px; display:none;
+}
+.note-banner.show{ display:block; }
+
+section.block{ margin-top:40px; }
+.section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+.section-head h2{ font-size:20px; font-weight:800; margin:0; display:flex; align-items:center; gap:10px; }
+.section-head h2 .num{ font-size:11px; color:var(--accent); border:1px solid var(--accent); border-radius:6px; padding:2px 8px; font-weight:700; }
+.section-sub{ font-size:12.5px; color:var(--muted); margin:0; max-width:640px; }
+
+.group-label{ font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:20px 0 10px; }
+.color-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
+.swatch-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); transition:transform .2s,box-shadow .2s; display:flex; flex-direction:column; }
+.swatch-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-hover); }
+.swatch-color{ height:100px; display:flex; align-items:flex-end; justify-content:space-between; padding:12px 14px; }
+.swatch-name{ font-weight:800; font-size:14px; }
+.swatch-tag{ font-size:9.5px; font-weight:700; text-transform:uppercase; background:rgba(255,255,255,.35); padding:3px 7px; border-radius:6px; letter-spacing:.4px; }
+.swatch-body{ padding:13px 15px; flex:1; display:flex; flex-direction:column; gap:7px; }
+.code-row{ display:flex; align-items:center; justify-content:space-between; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 8px 6px 11px; font-family:'Courier New',monospace; font-size:12px; }
+.code-row .label{ color:var(--muted); font-family:'Montserrat',sans-serif; font-weight:700; font-size:9.5px; text-transform:uppercase; margin-right:6px; letter-spacing:.4px; }
+.copy-btn{ border:none; background:transparent; cursor:pointer; color:var(--muted); font-size:13px; padding:4px 6px; border-radius:6px; transition:all .15s; }
+.copy-btn:hover{ background:var(--accent-soft); color:var(--accent); }
+.copy-btn.copied{ color:#1eb15b; }
+.pantone-line{ font-size:10.5px; margin-top:-2px; }
+.usage-bar{ height:5px; border-radius:4px; background:var(--border); margin-top:4px; overflow:hidden; }
+.usage-bar span{ display:block; height:100%; }
+.copy-all-btn{ margin-top:4px; border:1px solid var(--border); background:transparent; color:var(--text); font-family:'Montserrat',sans-serif; font-weight:700; font-size:11px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:all .2s; letter-spacing:.3px; }
+.copy-all-btn:hover{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+.type-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px; }
+.type-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.type-role{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:6px; }
+.type-name{ font-size:21px; font-weight:800; margin:0 0 4px; }
+.type-note{ font-size:11.5px; color:var(--muted); margin-bottom:12px; }
+.type-glyph{ font-size:40px; font-weight:700; line-height:1; margin-bottom:10px; }
+.weight-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{ font-size:10.5px; padding:5px 9px; border-radius:999px; background:var(--bg); border:1px solid var(--border); color:var(--text); font-weight:600; }
+
+.hierarchy-wrap{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+table.hierarchy{ width:100%; border-collapse:collapse; font-size:12.5px; }
+table.hierarchy thead th{ text-align:left; padding:13px 15px; background:var(--bg); font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); border-bottom:1px solid var(--border); }
+table.hierarchy tbody td{ padding:13px 15px; border-bottom:1px solid var(--border); vertical-align:middle; }
+table.hierarchy tbody tr:last-child td{ border-bottom:none; }
+table.hierarchy tbody tr:hover{ background:var(--accent-soft); }
+.level-name{ font-weight:800; }
+.color-dot{ display:inline-block; width:10px;height:10px;border-radius:50%; margin-right:6px; vertical-align:middle; border:1px solid rgba(0,0,0,.15); }
+
+.a11y-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+.a11y-card{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); font-size:12.5px; line-height:1.55; }
+.a11y-card h4{ margin:0 0 8px; font-size:13.5px; font-weight:800; }
+.pill-pass{ display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; background:#1eb15b22; color:#1eb15b; margin-right:5px;}
+.pill-fail{ display:inline-block; font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; background:#e7004c22; color:var(--accent); margin-right:5px;}
+
+footer{ text-align:center; padding:26px; font-size:11px; color:var(--muted); border-top:1px solid var(--border); margin-top:16px; }
+
+#toast{ position:fixed; bottom:26px; left:50%; transform:translate(-50%,20px); background:#1c1e26; color:#fff; padding:12px 22px; border-radius:999px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:all .3s; z-index:999; box-shadow:0 10px 24px rgba(0,0,0,.25); display:flex; align-items:center; gap:8px; }
+#toast.show{ opacity:1; transform:translate(-50%,0); }
+
+@media (max-width:900px){
+  body{ flex-direction:column; }
+  .sidebar{ width:100%; height:auto; position:relative; flex-direction:row; overflow-x:auto; }
+  .sidebar-header, .sidebar-footer{ display:none; }
+  .brand-nav{ display:flex; padding:10px; }
+  .brand-nav-label{ display:none; }
+  .brand-item{ white-space:nowrap; }
+}
+</style>
+</head>
+<body data-theme="light">
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-mark"><span class="prism-icon"></span>PRISM</div>
+    <div class="sidebar-sub">Multi-Brand Style Intelligence Console</div>
+  </div>
+  <nav class="brand-nav" id="brandNav">
+    <div class="brand-nav-label">Brands</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label" id="themeLabel">Light Mode</span>
+      <label class="switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <main>
+    <div class="hero" id="heroInner">
+      <div class="hero-eyebrow" id="heroEyebrow">Style Guide</div>
+      <div class="hero-name" id="heroName">Brand Name</div>
+      <div class="hero-tagline" id="heroTagline">Tagline</div>
+      <div class="audience-switch" id="audienceSwitch">
+        <button class="aud-btn" data-aud="hcp">HCP</button>
+        <button class="aud-btn" data-aud="patient">Patient</button>
+      </div>
+    </div>
+    <div class="note-banner" id="noteBanner"></div>
+
+    <section class="block">
+      <div class="section-head"><h2><span class="num">01</span>Color Palette</h2></div>
+      <p class="section-sub">Click any copy icon to grab a HEX, RGB, or CMYK value — or copy the full swatch at once.</p>
+      <div id="colorGroups"></div>
+    </section>
+
+    <section class="block">
+      <div class="section-head"><h2><span class="num">02</span>Typefaces</h2></div>
+      <p class="section-sub">Primary, secondary, and digital-safe fallback fonts as defined in each brand's guide.</p>
+      <div class="type-grid" id="typeGrid"></div>
+    </section>
+
+    <section class="block">
+      <div class="section-head"><h2><span class="num">03</span>Typographic Hierarchy</h2></div>
+      <p class="section-sub">Level-by-level rules for weight, size, line-height, case, color, and usage.</p>
+      <div class="hierarchy-wrap">
+        <table class="hierarchy">
+          <thead><tr><th>Level</th><th>Font / Weight</th><th>Size</th><th>Line Height</th><th>Case</th><th>Color</th><th>Usage</th></tr></thead>
+          <tbody id="hierarchyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="section-head"><h2><span class="num">04</span>Accessibility & Contrast Notes</h2></div>
+      <div class="a11y-grid" id="a11yGrid"></div>
+    </section>
+  </main>
+
+  <footer>Built for internal reference only — values sourced directly from each brand's official style guide PDF.</footer>
+</div>
+
+<div id="toast">✓ <span id="toastText">Copied!</span></div>
+
+<script>
+const DATA = {
+  amvuttra:{
+    displayName:"AMVUTTRA", eyebrow:"DTC Style Guide · v1.2", tagline:"(vutrisiran) 25 mg/0.5 mL injection — Alnylam Pharmaceuticals",
+    accent:"#E7004C", hasAudience:false,
+    colorGroups:[
+      {label:"Primary Colors", colors:[
+        {name:"Electric Cranberry", hex:"#E7004C", rgb:"231, 0, 76", cmyk:"0, 100, 55, 0", pantone:"PMS 1925C", tag:"Primary"},
+        {name:"Purple", hex:"#4D4084", rgb:"77, 64, 132", cmyk:"75, 80, 20, 0", pantone:"PMS 7672C", tag:"Primary"},
+        {name:"Green", hex:"#93D500", rgb:"147, 213, 0", cmyk:"41, 0, 78, 0", tag:"Primary"},
+        {name:"Light Gray", hex:"#F6F6F8", rgb:"246, 245, 249", cmyk:"4, 2, 2, 0", tag:"Primary"}
+      ]},
+      {label:"Secondary Colors", colors:[
+        {name:"Dark Cranberry", hex:"#B0003E", rgb:"176, 0, 62", cmyk:"22, 100, 70, 12", tag:"Secondary"},
+        {name:"Dark Purple", hex:"#362D5E", rgb:"54, 45, 94", cmyk:"90, 92, 33, 25", tag:"Secondary"},
+        {name:"Dark Green", hex:"#719F23", rgb:"113, 159, 35", cmyk:"58, 15, 100, 2", tag:"Secondary"},
+        {name:"Gray", hex:"#E1E7ED", rgb:"225, 231, 237", cmyk:"10, 5, 3, 0", tag:"Secondary"},
+        {name:"Placebo Gray", hex:"#D9D9D9", rgb:"217, 217, 217", cmyk:"14, 10, 11, 0", tag:"Secondary"},
+        {name:"Black", hex:"#000000", rgb:"0, 0, 0", cmyk:"0, 0, 0, 100", tag:"Secondary"}
+      ]}
+    ],
+    typefaces:[
+      {role:"Primary Typeface", name:"Gotham", note:"Book · Medium · Bold · Black · Condensed Bold", weights:["Book","Medium","Bold","Black","Condensed Bold"], family:"'Montserrat',sans-serif"},
+      {role:"Alternative / Digital-Safe", name:"Arial", note:"Used when Gotham is unavailable (PowerPoint, shared docs)", weights:["Regular","Bold","Narrow Bold"], family:"Arial,sans-serif"}
+    ],
+    hierarchy:[
+      {level:"Headline 1", font:"Gotham Condensed Bold", size:"72px / 30pt", lh:"110%", case:"Sentence", color:"#000000", usage:"Main headlines"},
+      {level:"Headline 2", font:"Gotham Black", size:"40px", lh:"100%", case:"Sentence", color:"#000000", usage:"Headlines"},
+      {level:"Headline 3", font:"Gotham Condensed Bold", size:"36px", lh:"100%", case:"Sentence", color:"#E7004C", usage:"ISI header / numbering"},
+      {level:"Subhead", font:"Gotham Black", size:"30px / 14pt", lh:"140%", case:"Sentence", color:"#000000", usage:"Subhead"},
+      {level:"Subhead 2", font:"Gotham Black", size:"24px", lh:"140%", case:"Sentence", color:"#000000", usage:"Subhead"},
+      {level:"Body (XL Bold)", font:"Gotham Black", size:"20px", lh:"140%", case:"Sentence", color:"#000000", usage:"Callouts"},
+      {level:"Body (Large)", font:"Gotham Book / Medium", size:"19px / 12pt", lh:"140%", case:"Sentence", color:"#000000", usage:"Main body copy"},
+      {level:"Body (Med)", font:"Gotham Medium", size:"16px", lh:"140%", case:"Sentence", color:"#000000", usage:"Chart details"},
+      {level:"Button", font:"Gotham Bold", size:"16px", lh:"140%", case:"Sentence", color:"#E7004C", usage:"Buttons"},
+      {level:"Footer", font:"Gotham Book / Bold", size:"14px / 8pt", lh:"140%", case:"Sentence", color:"#000000", usage:"Footer text"}
+    ],
+    a11y:[
+      {title:"AAA Pass Examples", body:"<span class='pill-pass'>AAA 21:1</span> Black on White<br><span class='pill-pass'>AAA 12.44:1</span> Dark Purple on White"},
+      {title:"Use With Caution", body:"<span class='pill-fail'>DNP</span> Electric Cranberry on Light Gray (1.78:1)<br><span class='pill-fail'>DNP</span> Green on White (1.39:1)"},
+      {title:"Body Text Rule", body:"Always set body copy in <b>Black (#000000 / K100)</b> for maximum legibility."}
+    ]
+  },
+
+  rezdiffra:{
+    displayName:"REZDIFFRA", eyebrow:"Global Brand Style Guide · Draft 1, 06/25", tagline:"resmetirom tablets 60mg · 80mg · 100mg — HCP & DTC Combined",
+    accent:"#140FA5", hasAudience:false,
+    colorGroups:[
+      {label:"Primary", colors:[
+        {name:"Deep Blue", hex:"#140FA5", rgb:"20, 15, 165", cmyk:"100, 90, 0, 2", pantone:"PMS 2736C", tag:"Primary"},
+        {name:"Active Green", hex:"#00BE41", rgb:"0, 190, 65", cmyk:"74, 0, 99, 0", pantone:"PMS 2271C", tag:"Primary"},
+        {name:"White", hex:"#FFFFFF", rgb:"255, 255, 255", cmyk:"0, 0, 0, 0", tag:"Primary"}
+      ]},
+      {label:"Shades", colors:[
+        {name:"Dark Blue (DTC Only)", hex:"#0A0853", rgb:"10, 8, 83", cmyk:"100, 99, 27, 40", tag:"Shade"},
+        {name:"Dark Green", hex:"#0A8735", rgb:"10, 135, 53", cmyk:"94, 0, 100, 17", pantone:"PMS 348C", tag:"Shade"}
+      ]},
+      {label:"Tints (DTC Only)", colors:[
+        {name:"5% Deep Blue", hex:"#F3F3FA", rgb:"243, 243, 250", cmyk:"3, 3, 0, 2", tag:"Tint"},
+        {name:"10% Deep Blue", hex:"#E8E7F6", rgb:"232, 231, 246", cmyk:"6, 6, 0, 4", tag:"Tint"},
+        {name:"30% Deep Blue", hex:"#B9B7E4", rgb:"185, 183, 228", cmyk:"19, 20, 0, 11", tag:"Tint"},
+        {name:"10% Active Green", hex:"#E6F8EC", rgb:"230, 248, 236", cmyk:"7, 0, 5, 3", tag:"Tint"}
+      ]},
+      {label:"Neutrals", colors:[
+        {name:"Shadow Blue (DTC)", hex:"#0F1B23", rgb:"15, 27, 35", cmyk:"57, 23, 0, 86", tag:"Neutral"},
+        {name:"Dark Gray (DTC)", hex:"#595959", rgb:"89, 89, 89", cmyk:"0, 0, 0, 65", tag:"Neutral"},
+        {name:"Light Gray", hex:"#F2F2F2", rgb:"242, 242, 242", cmyk:"0, 0, 0, 5", tag:"Neutral"}
+      ]},
+      {label:"Dosing Colors", colors:[
+        {name:"Deep Coral", hex:"#E7131D", rgb:"231, 19, 29", cmyk:"0, 96, 84, 0", pantone:"PMS 1788C", tag:"Dosing"},
+        {name:"Purple", hex:"#8C199B", rgb:"140, 25, 155", cmyk:"52, 99, 0, 0", pantone:"PMS 2070C", tag:"Dosing"},
+        {name:"Light Blue", hex:"#0078CD", rgb:"0, 120, 205", cmyk:"94, 14, 0, 0", pantone:"PMS 285C", tag:"Dosing"}
+      ]}
+    ],
+    typefaces:[
+      {role:"Headlines / Subheads / CTAs", name:"Mont", note:"Heavy* · Bold · Semibold · Regular (*HCP only)", weights:["Heavy*","Bold","Semibold","Regular"], family:"'Montserrat',sans-serif"},
+      {role:"Body Copy", name:"Acumin Pro", note:"Bold · Semibold · Medium · Regular · Light; Semi Condensed for HCP tight space", weights:["Bold","Semibold","Medium","Regular","Light"], family:"'Montserrat',sans-serif"},
+      {role:"Google-Safe Fallback", name:"Montserrat / Arial", note:"Montserrat replaces Mont; Arial replaces Acumin when brand fonts unavailable", weights:["Regular","Bold"], family:"'Montserrat',sans-serif"}
+    ],
+    hierarchy:[
+      {level:"Headline", font:"Mont Heavy/Bold", size:"—", lh:"—", case:"Sentence", color:"#140FA5", usage:"Headlines, subheads, CTAs"},
+      {level:"Body Copy", font:"Acumin Pro Regular/Medium", size:"—", lh:"—", case:"Sentence", color:"#000000", usage:"Body copy text"}
+    ],
+    a11y:[
+      {title:"AAA — Full Pass", body:"Passes for all text and UI elements."},
+      {title:"AAA — Headline Only", body:"Passes for headline text/UI at min. 14pt bold or 18pt regular."},
+      {title:"AA — Full / Headline Pass", body:"Passes for all text and UI elements, or headline-only at the same minimum sizing."},
+      {title:"Fail", body:"<span class='pill-fail'>Do Not Use</span> Combination fails accessibility — avoid entirely."}
+    ]
+  },
+
+  filsuvez:{
+    displayName:"FILSUVEZ", eyebrow:"Brand Guidelines · Draft 11.22.21", tagline:"(birch triterpenes) gel — Amryt Pharma",
+    accent:"#0065A1", hasAudience:true,
+    audiences:{
+      hcp:{
+        accent:"#0065A1", tagline:"HCP Materials — Blue Primary, Magenta Secondary",
+        colorGroups:[
+          {label:"Primary (HCP)", colors:[
+            {name:"HCP Blue", hex:"#0065A1", rgb:"0, 101, 161", cmyk:"100, 53, 21, 4", pantone:"PMS 641C", tag:"Primary — HCP"}
+          ]},
+          {label:"Accent Colors", colors:[
+            {name:"Green", hex:"#70D44B", rgb:"112, 212, 75", cmyk:"56, 0, 93, 0", pantone:"PMS 7488C", tag:"Accent"},
+            {name:"Cool Gray 9", hex:"#75787B", rgb:"117, 120, 123", cmyk:"50, 40, 34, 17", tag:"Accent"}
+          ]},
+          {label:"Text Color", colors:[
+            {name:"Body Text (90% Black)", hex:"#1A1A1A", rgb:"26, 26, 26", cmyk:"0, 0, 0, 90", tag:"Body Text"}
+          ]}
+        ],
+        typefaces:[
+          {role:"Wordmark Typeface", name:"Tisa Sans Pro", note:"Light Italic — logo wordmark, used selectively in branded materials", weights:["Light Italic"], family:"'Montserrat',sans-serif"},
+          {role:"Generic Name Typeface", name:"Acumin Variable Concept", note:"Extra Condensed Extra Light — generic drug name treatment", weights:["Extra Condensed Extra Light"], family:"'Montserrat',sans-serif"},
+          {role:"Body Copy", name:"Montserrat", note:"Used for all body text within materials", weights:["Regular"], family:"'Montserrat',sans-serif"}
+        ],
+        hierarchy:[
+          {level:"Heads/Subheads", font:"Tisa Sans Pro / Montserrat", size:"—", lh:"—", case:"Sentence", color:"#0065A1", usage:"May be Blue, Magenta, Cool Gray, or 90% Black"},
+          {level:"Body Copy", font:"Montserrat Regular", size:"—", lh:"—", case:"Sentence", color:"#1A1A1A", usage:"Body copy — always 90% Black"}
+        ],
+        a11y:[{title:"Color Role Rule", body:"Blue identifies HCP materials; use as the dominant color with Magenta as secondary accent."}]
+      },
+      patient:{
+        accent:"#B31983", tagline:"Patient Materials — Magenta Primary, Blue Secondary",
+        colorGroups:[
+          {label:"Primary (Patient)", colors:[
+            {name:"Patient Magenta", hex:"#B31983", rgb:"179, 25, 131", cmyk:"31, 100, 9, 0", pantone:"PMS 241C", tag:"Primary — Patient"}
+          ]},
+          {label:"Accent Colors", colors:[
+            {name:"Green", hex:"#70D44B", rgb:"112, 212, 75", cmyk:"56, 0, 93, 0", pantone:"PMS 7488C", tag:"Accent"},
+            {name:"Cool Gray 9", hex:"#75787B", rgb:"117, 120, 123", cmyk:"50, 40, 34, 17", tag:"Accent"}
+          ]},
+          {label:"Text Color", colors:[
+            {name:"Body Text (90% Black)", hex:"#1A1A1A", rgb:"26, 26, 26", cmyk:"0, 0, 0, 90", tag:"Body Text"}
+          ]}
+        ],
+        typefaces:[
+          {role:"Wordmark Typeface", name:"Tisa Sans Pro", note:"Light Italic — logo wordmark", weights:["Light Italic"], family:"'Montserrat',sans-serif"},
+          {role:"Generic Name Typeface", name:"Acumin Variable Concept", note:"Extra Condensed Extra Light", weights:["Extra Condensed Extra Light"], family:"'Montserrat',sans-serif"},
+          {role:"Body Copy", name:"Montserrat", note:"Used for all body text within materials", weights:["Regular"], family:"'Montserrat',sans-serif"}
+        ],
+        hierarchy:[
+          {level:"Heads/Subheads", font:"Tisa Sans Pro / Montserrat", size:"—", lh:"—", case:"Sentence", color:"#B31983", usage:"May be Magenta, Blue, Cool Gray, or 90% Black"},
+          {level:"Body Copy", font:"Montserrat Regular", size:"—", lh:"—", case:"Sentence", color:"#1A1A1A", usage:"Body copy — always 90% Black"}
+        ],
+        a11y:[{title:"Color Role Rule", body:"Magenta identifies Patient materials; use as the dominant color with Blue as secondary accent."}]
+      }
+    }
+  },
+
+  madrigal_dse:{
+    displayName:"MADRIGAL DSE", eyebrow:"Disease State Education · Visual Identity v2, 01.21.25", tagline:"Madrigal Pharmaceuticals — DSE Brand System",
+    accent:"#F3693F", hasAudience:false,
+    colorGroups:[
+      {label:"Primary Colors", colors:[
+        {name:"Trinidad", hex:"#F3693F", rgb:"243, 105, 63", cmyk:"0, 57, 74, 5", tag:"Primary"},
+        {name:"Oyster", hex:"#FFF7F0", rgb:"255, 247, 240", cmyk:"0, 3, 6, 0", tag:"Primary — Panel"},
+        {name:"White", hex:"#FFFFFF", rgb:"255, 255, 255", cmyk:"0, 0, 0, 0", tag:"Primary — Background"}
+      ]},
+      {label:"Secondary Colors", colors:[
+        {name:"Orange Peel", hex:"#FFB048", rgb:"255, 176, 72", cmyk:"0, 31, 72, 0", tag:"Secondary"},
+        {name:"Tia Maria", hex:"#C73114", rgb:"199, 49, 20", cmyk:"0, 76, 100, 29", tag:"Secondary"}
+      ]},
+      {label:"Tertiary Colors", colors:[
+        {name:"Oxblood", hex:"#33050E", rgb:"51, 5, 14", cmyk:"0, 90, 73, 80", tag:"Tertiary"},
+        {name:"Obsidian", hex:"#181C22", rgb:"24, 28, 34", cmyk:"29, 18, 0, 87", tag:"Tertiary — Body Copy"},
+        {name:"Breakers", hex:"#E8E9EA", rgb:"232, 233, 234", cmyk:"1, 0, 0, 8", tag:"Tertiary — Locked Content"}
+      ]}
+    ],
+    typefaces:[
+      {role:"Primary Typeface", name:"Helvetica Now", note:"Bold · Medium · Roman · Light (formerly Helvetica Neue)", weights:["Bold","Medium","Roman","Light"], family:"'Montserrat',sans-serif"}
+    ],
+    hierarchy:[
+      {level:"Eyebrow", font:"Helvetica Now Bold", size:"18px", lh:"—", case:"ALL CAPS", color:"#33050E", usage:"Eyebrow label"},
+      {level:"H1 — Main Headline", font:"Helvetica Now Light", size:"60px (desktop) / 48px (mobile)", lh:"120%", case:"Sentence", color:"#33050E", usage:"Main headline"},
+      {level:"H2", font:"Helvetica Now Light", size:"42px / 36px", lh:"120%", case:"Sentence", color:"#33050E", usage:"Headline"},
+      {level:"H3", font:"Helvetica Now Light", size:"34px / 28px", lh:"120%", case:"Sentence", color:"#33050E", usage:"Headline"},
+      {level:"H4 — Subhead", font:"Helvetica Now Medium", size:"28px / 24px", lh:"120%", case:"Sentence", color:"#C73114", usage:"Subhead"},
+      {level:"P Large", font:"Helvetica Now Regular/Bold", size:"24px / 20px", lh:"140%", case:"Sentence", color:"#33050E", usage:"Callout copy"},
+      {level:"Body Copy (P)", font:"Helvetica Now Regular/Bold", size:"18px / 16px", lh:"140%", case:"Sentence", color:"#181C22", usage:"Body copy"},
+      {level:"P Small", font:"Helvetica Now Regular", size:"14px / 13px", lh:"140%", case:"Sentence", color:"#181C22", usage:"Small copy"}
+    ],
+    a11y:[
+      {title:"Compliant Combinations", body:"<span class='pill-pass'>Pass</span> Obsidian on Trinidad · White on Oxblood · Tia Maria on Oxblood · Oyster on Oxblood · Orange Peel on Oxblood"},
+      {title:"Non-Compliant Combinations", body:"<span class='pill-fail'>Fail</span> Oyster on Trinidad · Orange Peel on Tia Maria · Oxblood on Obsidian · White on Orange Peel · White on Oyster"},
+      {title:"Digital Text Rule", body:"Pure Black (#000000) is never used for text — replaced by <b>Obsidian (#181C22)</b> to reduce digital eye strain."},
+      {title:"Data Note", body:"Some CMYK values in the source PDF had inconsistent spacing; figures shown here are best-effort interpretations of the original guide."}
+    ]
+  },
+
+  madrigal_corporate:{
+    displayName:"MADRIGAL CORPORATE", eyebrow:"Corporate Identity One-Sheeter · 2024", tagline:"Madrigal Pharmaceuticals — Corporate Brand Identity",
+    accent:"#00014D", hasAudience:false,
+    colorGroups:[
+      {label:"Primary Colors", colors:[
+        {name:"Navy Blue", hex:"#00014D", rgb:"0, 1, 77", cmyk:"100, 97, 27, 47", pantone:"PMS 275C", tag:"Primary — Headlines"},
+        {name:"Orange", hex:"#FF6C00", rgb:"255, 108, 0", cmyk:"0, 72, 100, 0", pantone:"PMS Bright Orange C", tag:"Primary"}
+      ]},
+      {label:"Secondary Colors", colors:[
+        {name:"Yellow", hex:"#FFCA00", rgb:"255, 202, 0", cmyk:"0, 20, 96, 0", pantone:"PMS 116C", tag:"Secondary"},
+        {name:"Bright Blue", hex:"#000477", rgb:"0, 4, 119", cmyk:"100, 99, 26, 15", pantone:"PMS 2745C", tag:"Secondary"},
+        {name:"Cyan", hex:"#04ACED", rgb:"4, 172, 237", cmyk:"70, 13, 2, 0", pantone:"PMS 289C", tag:"Secondary"},
+        {name:"Sky Blue", hex:"#BCDFFA", rgb:"188, 223, 250", cmyk:"25, 4, 1, 0", pantone:"PMS 290C 70%", tag:"Secondary"}
+      ]},
+      {label:"Neutrals", colors:[
+        {name:"Mist", hex:"#C5D8DE", rgb:"197, 216, 222", cmyk:"22, 7, 9, 0", pantone:"PMS 5523C 70%", tag:"Neutral — Background"},
+        {name:"Light Gray", hex:"#F4F3EF", rgb:"244, 243, 239", cmyk:"3, 2, 4, 0", pantone:"PMS Warm Gray 1C 20%", tag:"Neutral — Background"},
+        {name:"Black 85% (Body Copy)", hex:"#262626", rgb:"38, 38, 38", cmyk:"0, 0, 0, 85", tag:"Neutral — Body Copy"}
+      ]}
+    ],
+    typefaces:[
+      {role:"Primary Typeface", name:"Fustat", note:"Light · Regular · Medium · Semibold · Bold — all corporate marketing, print & digital", weights:["Light","Regular","Medium","Semibold","Bold"], family:"'Montserrat',sans-serif"},
+      {role:"Secondary / Fallback", name:"Arial", note:"Cross-platform default when Fustat unavailable (PowerPoint, Word, email)", weights:["Regular","Bold"], family:"Arial,sans-serif"}
+    ],
+    hierarchy:[
+      {level:"Headlines / Titles", font:"Fustat Bold/Semibold", size:"—", lh:"—", case:"Sentence", color:"#00014D", usage:"Headlines set on Navy Blue backgrounds"},
+      {level:"Body Copy", font:"Fustat Regular/Medium", size:"—", lh:"—", case:"Sentence", color:"#262626", usage:"Body copy at 85% black"}
+    ],
+    a11y:[
+      {title:"ADA Compliance", body:"The 2024 palette was specifically re-engineered with bolder, stronger blue/orange tones that meet ADA color contrast requirements across all mediums."},
+      {title:"White Space Principle", body:"White space is treated as an active brand element — used generously as backgrounds to enhance visual presence of color, text, and imagery."}
+    ]
+  },
+
+  trutakna:{
+    displayName:"TRUTAKNA", eyebrow:"Brand Style Guide · v1.0, 2025", tagline:"(atacicept-xxxx) injection — Vera Therapeutics",
+    accent:"#36508C", hasAudience:true,
+    audiences:{
+      hcp:{
+        accent:"#36508C", tagline:"HCP Palette — Scientific, Visionary, Elegant",
+        colorGroups:[
+          {label:"Core Palette", colors:[
+            {name:"Deep Sea", hex:"#36508C", rgb:"54, 80, 140", cmyk:"84, 68, 5, 19", pantone:"PMS 4142", usage:40, tag:"Primary"},
+            {name:"Midnight Blue", hex:"#101C45", rgb:"16, 28, 69", cmyk:"100, 93, 40, 47", pantone:"PMS 2766C", usage:25, tag:"Secondary"},
+            {name:"Sky", hex:"#6FADDE", rgb:"111, 173, 222", cmyk:"54, 19, 0, 0", pantone:"PMS 284", usage:10, tag:"Tertiary"},
+            {name:"Graphite", hex:"#64696F", rgb:"100, 105, 111", cmyk:"57, 46, 40, 25", pantone:"PMS Cool Gray 10", usage:10, tag:"Tertiary"}
+          ]},
+          {label:"Accent Colors", colors:[
+            {name:"Coral", hex:"#F37775", rgb:"243, 119, 117", cmyk:"0, 67, 45, 0", pantone:"PMS 6046", usage:5, tag:"Accent"},
+            {name:"Golden Dusk", hex:"#FFD162", rgb:"255, 209, 98", cmyk:"0, 18, 72, 0", pantone:"PMS 135", usage:5, tag:"Accent"},
+            {name:"Tidepool", hex:"#63C6BF", rgb:"99, 198, 191", cmyk:"58, 0, 30, 0", pantone:"PMS 3255", usage:5, tag:"Accent"}
+          ]}
+        ],
+        typefaces:[
+          {role:"Primary Display", name:"Bio Sans", note:"Extra Light → Extra Bold + italics; Condensed for tight layouts", weights:["Extra Light","Light","Regular","SemiBold","Bold","Extra Bold"], family:"'Montserrat',sans-serif"},
+          {role:"Body Copy", name:"Elza", note:"Thin → Black, plus Oblique & Condensed families", weights:["Thin","Light","Regular","Medium","SemiBold","Bold","Black"], family:"'Montserrat',sans-serif"},
+          {role:"Digital Fallback", name:"Helvetica", note:"Used when Bio Sans/Elza are unavailable", weights:["Regular"], family:"Helvetica,Arial,sans-serif"}
+        ],
+        hierarchy:[
+          {level:"Eyebrow", font:"Bio Sans Bold", size:"30% scale", lh:"—", case:"ALL CAPS", color:"#101C45", usage:"Eyebrow label"},
+          {level:"Headline", font:"Bio Sans SemiBold", size:"100% scale", lh:"—", case:"Sentence", color:"#63C6BF", usage:"Main headline"},
+          {level:"Subhead", font:"Bio Sans SemiBold", size:"60% scale", lh:"—", case:"Sentence", color:"#36508C", usage:"Subhead"},
+          {level:"Body", font:"Elza Bold/Regular", size:"25% scale", lh:"—", case:"Sentence", color:"#36508C", usage:"Body copy"},
+          {level:"Footnotes", font:"Elza Regular", size:"12% scale", lh:"—", case:"Sentence", color:"#36508C", usage:"Footnotes"}
+        ],
+        a11y:[
+          {title:"White Background Rule", body:"On white, use darker Tidepool tint <b>#348C8C</b> to preserve contrast."},
+          {title:"Best Contrast Pairs", body:"<span class='pill-pass'>16.46:1</span> White on Midnight Blue<br><span class='pill-pass'>11.41:1</span> Golden Dusk on Midnight Blue<br><span class='pill-pass'>7.82:1</span> White on Deep Sea"}
+        ]
+      },
+      patient:{
+        accent:"#6FADDE", tagline:"Patient Palette — Empowering, Transformative, Aspirational",
+        colorGroups:[
+          {label:"Core Palette", colors:[
+            {name:"Sky", hex:"#6FADDE", rgb:"111, 173, 222", cmyk:"54, 19, 0, 0", pantone:"PMS 284", usage:40, tag:"Primary"},
+            {name:"Deep Sea", hex:"#36508C", rgb:"54, 80, 140", cmyk:"84, 68, 5, 19", pantone:"PMS 4142", usage:25, tag:"Secondary"},
+            {name:"Midnight Blue", hex:"#101C45", rgb:"16, 28, 69", cmyk:"100, 93, 40, 47", pantone:"PMS 2766C", usage:10, tag:"Tertiary"},
+            {name:"Graphite", hex:"#64696F", rgb:"100, 105, 111", cmyk:"57, 46, 40, 25", pantone:"PMS Cool Gray 10", usage:10, tag:"Tertiary"}
+          ]},
+          {label:"Accent Colors", colors:[
+            {name:"Golden Dusk", hex:"#FFD162", rgb:"255, 209, 98", cmyk:"0, 18, 72, 0", pantone:"PMS 135", usage:5, tag:"Accent"},
+            {name:"Coral", hex:"#F37775", rgb:"243, 119, 117", cmyk:"0, 67, 45, 0", pantone:"PMS 6046", usage:5, tag:"Accent"},
+            {name:"Tidepool", hex:"#63C6BF", rgb:"99, 198, 191", cmyk:"58, 0, 30, 0", pantone:"PMS 3255", usage:5, tag:"Accent"}
+          ]}
+        ],
+        typefaces:[
+          {role:"Primary Display", name:"P22 Mackinac Pro", note:"Book, Medium, Bold, Extra Bold + italics", weights:["Book","Medium","Bold","Extra Bold"], family:"'Montserrat',sans-serif"},
+          {role:"Body Copy", name:"Elza", note:"Thin → Black, plus Oblique & Condensed families", weights:["Thin","Light","Regular","Medium","SemiBold","Bold","Black"], family:"'Montserrat',sans-serif"},
+          {role:"Digital Fallback", name:"Helvetica", note:"Used when P22 Mackinac Pro/Elza are unavailable", weights:["Regular"], family:"Helvetica,Arial,sans-serif"}
+        ],
+        hierarchy:[
+          {level:"Eyebrow", font:"P22 Mackinac Pro Bold", size:"30% scale", lh:"—", case:"ALL CAPS", color:"#101C45", usage:"Eyebrow label"},
+          {level:"Headline", font:"P22 Mackinac Pro Bold", size:"100% scale", lh:"—", case:"Sentence", color:"#6FADDE", usage:"Main headline"},
+          {level:"Subhead", font:"Elza Medium/Medium Italic", size:"60% scale", lh:"—", case:"Sentence", color:"#101C45", usage:"Subhead"},
+          {level:"Body", font:"Elza Bold/Regular", size:"25% scale", lh:"—", case:"Sentence", color:"#101C45", usage:"Body copy"},
+          {level:"Footnotes", font:"Elza Regular", size:"12% scale", lh:"—", case:"Sentence", color:"#101C45", usage:"Footnotes"}
+        ],
+        a11y:[
+          {title:"White Background Rule", body:"On white, use darker Sky tint <b>#4574BF</b> to preserve contrast."},
+          {title:"Best Contrast Pairs", body:"<span class='pill-pass'>15.28:1</span> Midnight Blue on Golden Dusk tint<br><span class='pill-pass'>13.61:1</span> Midnight Blue on Coral tint<br><span class='pill-pass'>12.2:1</span> Midnight Blue on Sky tint"}
+        ]
+      }
+    }
+  },
+
+  wegovy:{
+    displayName:"WEGOVY", eyebrow:"Quick Reference Guide 1.0 · Live Lighter™", tagline:"semaglutide injection 2.4mg / tablet 25mg — Novo Nordisk",
+    accent:"#0092BC", hasAudience:false,
+    colorGroups:[
+      {label:"Primary", colors:[
+        {name:"Assurance Blue", hex:"#0092BC", rgb:"0, 146, 188", cmyk:"100, 0, 11, 6", tag:"Primary"},
+        {name:"Spirited Magenta", hex:"#C6007E", rgb:"198, 0, 126", cmyk:"11, 100, 0, 0", tag:"Secondary"}
+      ]},
+      {label:"Secondary / Neutrals", colors:[
+        {name:"Dependable Grey", hex:"#C1C6C8", rgb:"193, 198, 200", cmyk:"21, 13, 8, 0", tag:"Neutral"},
+        {name:"Copy Grey", hex:"#474747", rgb:"71, 71, 71", cmyk:"0, 0, 0, 90", tag:"Neutral"}
+      ]}
+    ],
+    typefaces:[
+      {role:"Primary Typeface", name:"Apis", note:"Bold (Eyebrow/Headline) · Medium (Headline/Subhead/Copy) · Regular (Copy/Footnotes)", weights:["Regular","Medium","Bold"], family:"'Montserrat',sans-serif"}
+    ],
+    hierarchy:[
+      {level:"Eyebrow", font:"Apis Bold", size:"—", lh:"—", case:"ALL CAPS", color:"#0092BC", usage:"Eyebrow label"},
+      {level:"Headline", font:"Apis Medium", size:"—", lh:"—", case:"Sentence", color:"#1c1e26", usage:"Primary headline"},
+      {level:"Subhead", font:"Apis Medium", size:"—", lh:"—", case:"Sentence", color:"#1c1e26", usage:"Subhead"},
+      {level:"Regular Copy", font:"Apis Regular", size:"—", lh:"—", case:"Sentence", color:"#474747", usage:"Body copy"},
+      {level:"Regular Copy (Emphasis)", font:"Apis Medium", size:"—", lh:"—", case:"Sentence", color:"#1c1e26", usage:"Emphasized body copy"},
+      {level:"Footnotes", font:"Apis Regular", size:"—", lh:"—", case:"Sentence", color:"#474747", usage:"Footnotes / legal copy"}
+    ],
+    a11y:[
+      {title:"Locked Lockup", body:"“LIVE LIGHTER™” must always sit directly above “with Wegovy®” — this pairing is fixed and cannot be altered."},
+      {title:"Button Usage", body:"Assurance Blue is the primary CTA color; Spirited Magenta is reserved for secondary emphasis and data highlights."}
+    ]
+  }
+};
+
+const BRAND_ORDER = ["amvuttra","rezdiffra","filsuvez","madrigal_dse","madrigal_corporate","trutakna","wegovy"];
+
+let currentBrand = "amvuttra";
+let currentAudience = "hcp";
+
+function getActiveDataset(){
+  const b = DATA[currentBrand];
+  return b.hasAudience ? b.audiences[currentAudience] : b;
+}
+function luminanceOf(hex){
+  const c = hex.replace('#','');
+  const r = parseInt(c.substr(0,2),16)/255, g = parseInt(c.substr(2,2),16)/255, b = parseInt(c.substr(4,2),16)/255;
+  const lin = v => v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4);
+  return 0.2126*lin(r)+0.7152*lin(g)+0.0722*lin(b);
+}
+function textColorFor(hex){ return luminanceOf(hex) > 0.45 ? '#1c1e26' : '#ffffff'; }
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastText').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+function copyToClipboard(text, btnEl){
+  const doCopy = () => {
+    if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); return Promise.resolve();
+  };
+  doCopy().then(()=>{
+    showToast(`Copied "${text}"`);
+    if(btnEl){ const orig = btnEl.textContent; btnEl.textContent='✓'; btnEl.classList.add('copied');
+      setTimeout(()=>{ btnEl.textContent=orig; btnEl.classList.remove('copied'); },1000); }
+  });
+}
+
+function buildSidebar(){
+  const nav = document.getElementById('brandNav');
+  BRAND_ORDER.forEach(key=>{
+    const b = DATA[key];
+    const btn = document.createElement('button');
+    btn.className = 'brand-item' + (key===currentBrand ? ' active':'');
+    btn.dataset.brand = key;
+    btn.innerHTML = `<span class="brand-dot" style="background:${b.accent}"></span>
+      <span class="bname">${b.displayName}<span class="bsub">${b.hasAudience ? 'HCP + Patient':'Style Guide'}</span></span>`;
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.brand-item').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      currentBrand = key; currentAudience = "hcp";
+      renderAll();
+    });
+    nav.appendChild(btn);
+  });
+}
+
+function renderAll(){
+  const brand = DATA[currentBrand];
+  const ds = getActiveDataset();
+  const accent = ds.accent || brand.accent;
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-soft', accent + '22');
+  document.getElementById('heroInner').style.background = `linear-gradient(120deg, ${accent} 0%, ${accent} 45%, ${accent}cc 100%)`;
+  document.getElementById('heroEyebrow').textContent = brand.eyebrow;
+  document.getElementById('heroName').textContent = brand.displayName;
+  document.getElementById('heroTagline').textContent = ds.tagline || brand.tagline;
+
+  const audSwitch = document.getElementById('audienceSwitch');
+  if(brand.hasAudience){
+    audSwitch.classList.add('show');
+    document.querySelectorAll('.aud-btn').forEach(b=>b.classList.toggle('active', b.dataset.aud === currentAudience));
+  } else audSwitch.classList.remove('show');
+
+  const noteBanner = document.getElementById('noteBanner');
+  if(currentBrand === 'madrigal_dse'){
+    noteBanner.classList.add('show');
+    noteBanner.textContent = "Note: Some CMYK values in the source PDF (Oyster, Obsidian) had inconsistent character spacing; figures shown reflect best-effort interpretation of the original guide.";
+  } else noteBanner.classList.remove('show');
+
+  renderColors(ds.colorGroups);
+  renderTypography(ds.typefaces);
+  renderHierarchy(ds.hierarchy);
+  renderA11y(ds.a11y);
+}
+
+function renderColors(groups){
+  const wrap = document.getElementById('colorGroups');
+  wrap.innerHTML = '';
+  groups.forEach(group=>{
+    const label = document.createElement('div'); label.className='group-label'; label.textContent=group.label;
+    wrap.appendChild(label);
+    const grid = document.createElement('div'); grid.className='color-grid';
+    group.colors.forEach(c=>{
+      const textColor = textColorFor(c.hex);
+      const card = document.createElement('div'); card.className='swatch-card';
+      card.innerHTML = `
+        <div class="swatch-color" style="background:${c.hex}; color:${textColor};">
+          <div><div class="swatch-name">${c.name}</div>${c.pantone ? `<div class="pantone-line" style="color:${textColor}CC">${c.pantone}</div>`:''}</div>
+          ${c.tag ? `<span class="swatch-tag" style="color:${textColor}">${c.tag}</span>`:''}
+        </div>
+        <div class="swatch-body">
+          <div class="code-row"><div><span class="label">Hex</span>${c.hex}</div><button class="copy-btn" data-copy="${c.hex}">📋</button></div>
+          <div class="code-row"><div><span class="label">RGB</span>${c.rgb}</div><button class="copy-btn" data-copy="rgb(${c.rgb})">📋</button></div>
+          <div class="code-row"><div><span class="label">CMYK</span>${c.cmyk}</div><button class="copy-btn" data-copy="cmyk(${c.cmyk})">📋</button></div>
+          ${c.usage ? `<div class="usage-bar"><span style="width:${c.usage}%; background:${c.hex}"></span></div><div style="font-size:10px;color:var(--muted);">${c.usage}% palette usage</div>`:''}
+          <button class="copy-all-btn" data-copyall="${c.name} — HEX: ${c.hex} | RGB: ${c.rgb} | CMYK: ${c.cmyk}${c.pantone ? ' | ' + c.pantone : ''}">Copy All Values</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
+  });
+  wrap.querySelectorAll('.copy-btn').forEach(btn=>btn.addEventListener('click', ()=>copyToClipboard(btn.dataset.copy, btn)));
+  wrap.querySelectorAll('.copy-all-btn').forEach(btn=>btn.addEventListener('click', ()=>copyToClipboard(btn.dataset.copyall, null)));
+}
+
+function renderTypography(fonts){
+  const grid = document.getElementById('typeGrid'); grid.innerHTML = '';
+  fonts.forEach(f=>{
+    const card = document.createElement('div'); card.className='type-card';
+    card.innerHTML = `<div class="type-role">${f.role}</div>
+      <div class="type-glyph" style="font-family:${f.family}">Aa Bb Cc</div>
+      <div class="type-name">${f.name}</div><div class="type-note">${f.note}</div>
+      <div class="weight-chips">${f.weights.map(w=>`<span class="chip">${w}</span>`).join('')}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderHierarchy(rows){
+  const body = document.getElementById('hierarchyBody'); body.innerHTML = '';
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="level-name">${r.level}</td><td>${r.font}</td><td>${r.size}</td><td>${r.lh}</td><td>${r.case}</td>
+      <td><span class="color-dot" style="background:${r.color}"></span>${r.color}</td><td style="color:var(--muted)">${r.usage}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+function renderA11y(items){
+  const grid = document.getElementById('a11yGrid'); grid.innerHTML = '';
+  (items||[]).forEach(it=>{
+    const card = document.createElement('div'); card.className='a11y-card';
+    card.innerHTML = `<h4>${it.title}</h4><div>${it.body}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById('audienceSwitch').addEventListener('click', e=>{
+  const btn = e.target.closest('.aud-btn'); if(!btn) return;
+  currentAudience = btn.dataset.aud; renderAll();
+});
+document.getElementById('themeToggle').addEventListener('change', e=>{
+  const isDark = e.target.checked;
+  document.body.setAttribute('data-theme', isDark ? 'dark':'light');
+  document.getElementById('themeLabel').textContent = isDark ? 'Dark Mode':'Light Mode';
+});
+
+buildSidebar();
+renderAll();
+</script>
+</body>
+</html>
