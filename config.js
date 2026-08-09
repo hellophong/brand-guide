@@ -34,8 +34,8 @@
 // ============================================================================
 
 window.SPECTRA_CONFIG = {
-  SUPABASE_URL: "PASTE_YOUR_PROJECT_URL_HERE",
-  SUPABASE_KEY: "PASTE_YOUR_PUBLISHABLE_KEY_HERE",
+  SUPABASE_URL: "https://ghvgbdxdhxzjtesupstg.supabase.co/rest/v1/",
+  SUPABASE_KEY: "sb_publishable_69w4H3KinnVeBT9sQkXR_g_qsz2v_0Y",
 
   // Buckets created in Step 6. Change only if you named them differently.
   GUIDES_BUCKET: "brand-guides",
