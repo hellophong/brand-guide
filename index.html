@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spectra — Brand Guide Library</title>
+<style>
+/* ============================================================
+   SPECTRA — design tokens
+   Dark-first by intent (the reference UI is a dark chat client).
+   Bare :root = dark. Light is redefined at token level only, for
+   both the un-stamped OS-light case and the explicit toggle.
+   ============================================================ */
+:root{
+  --rail:#141519;
+  --sidebar:#1c1e23;
+  --canvas:#24262c;
+  --raised:#2b2e35;
+  --raised-2:#33373f;
+  --line:#34373e;
+  --line-soft:#2a2d33;
+  --text:#e6e8ec;
+  --text-dim:#a3a8b3;
+  --text-faint:#767c88;
+  --accent:#7c6bf5;
+  --accent-hover:#8d80ff;
+  --accent-soft:rgba(124,107,245,.16);
+  --on-accent:#fff;
+  --good:#3fb27f;
+  --warn:#e0a33e;
+  --bad:#e05c5c;
+  --good-soft:rgba(63,178,127,.14);
+  --warn-soft:rgba(224,163,62,.14);
+  --bad-soft:rgba(224,92,92,.14);
+  --shadow:0 8px 24px rgba(0,0,0,.32);
+  --shadow-lg:0 24px 60px rgba(0,0,0,.5);
+  --ring:0 0 0 2px var(--canvas),0 0 0 4px var(--accent);
+  --checker:rgba(255,255,255,.05);
+  --radius:10px;
+  --font-ui:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --rail:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
+    --line:#dde0e6; --line-soft:#e8eaee;
+    --text:#1b1d23; --text-dim:#5b616c; --text-faint:#888e99;
+    --accent:#5a48d6; --accent-hover:#4a39c2; --accent-soft:rgba(90,72,214,.12);
+    --good:#1f8f5f; --warn:#a9760f; --bad:#c53c3c;
+    --shadow:0 6px 18px rgba(20,22,30,.10); --shadow-lg:0 24px 60px rgba(20,22,30,.18);
+    --checker:rgba(0,0,0,.05);
+  }
+}
+:root[data-theme="light"]{
+  --rail:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
+  --line:#dde0e6; --line-soft:#e8eaee;
+  --text:#1b1d23; --text-dim:#5b616c; --text-faint:#888e99;
+  --accent:#5a48d6; --accent-hover:#4a39c2; --accent-soft:rgba(90,72,214,.12);
+  --good:#1f8f5f; --warn:#a9760f; --bad:#c53c3c;
+  --shadow:0 6px 18px rgba(20,22,30,.10); --shadow-lg:0 24px 60px rgba(20,22,30,.18);
+  --checker:rgba(0,0,0,.05);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--canvas); color:var(--text);
+  font-family:var(--font-ui); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+button,input{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+:focus-visible{outline:none;box-shadow:var(--ring)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+
+/* ---------- shell ---------- */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ---------- brand rail ---------- */
+.rail{
+  width:72px;flex:0 0 72px;background:var(--rail);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:12px 0;overflow-y:auto;scrollbar-width:none;
+}
+.rail::-webkit-scrollbar{display:none}
+.rail-item{position:relative;width:100%;display:flex;justify-content:center}
+.rail-item::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%) scaleY(0);
+  width:4px;height:40px;border-radius:0 4px 4px 0;background:var(--text);
+  transition:transform .18s ease;
+}
+.rail-item:hover::before{transform:translateY(-50%) scaleY(.45)}
+.rail-item.active::before{transform:translateY(-50%) scaleY(1)}
+.rail-btn{
+  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
+  font-weight:700;font-size:15px;letter-spacing:.02em;color:#fff;
+  transition:border-radius .16s ease,transform .16s ease;overflow:hidden;
+}
+.rail-item:hover .rail-btn,.rail-item.active .rail-btn{border-radius:14px}
+.rail-btn:active{transform:translateY(1px)}
+.rail-home{background:var(--accent);color:var(--on-accent)}
+.rail-add{background:var(--raised);color:var(--good);font-size:24px;font-weight:400;line-height:1}
+.rail-add:hover{background:var(--good);color:#fff}
+.rail-divider{width:32px;height:2px;background:var(--line);border-radius:1px;margin:4px 0}
+.rail-badge{
+  position:absolute;bottom:-2px;right:10px;width:14px;height:14px;
+  border-radius:50%;background:var(--warn);color:#141519;font-size:9px;font-weight:900;
+  display:grid;place-items:center;border:3px solid var(--rail);box-sizing:content-box;
+  pointer-events:none;
+}
+
+/* ---------- library sidebar ---------- */
+.sidebar{
+  width:264px;flex:0 0 264px;background:var(--sidebar);
+  display:flex;flex-direction:column;min-height:0;
+}
+.sb-head{
+  height:52px;flex:0 0 52px;display:flex;align-items:center;gap:8px;
+  padding:0 16px;border-bottom:1px solid var(--line-soft);box-shadow:0 1px 0 rgba(0,0,0,.12);
+}
+.sb-head h1{font-size:15px;font-weight:700;margin:0;letter-spacing:-.01em}
+.sb-head .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.sb-search{padding:10px 12px 6px}
+.sb-search input{
+  width:100%;height:32px;border-radius:6px;border:1px solid transparent;background:var(--rail);
+  padding:0 10px;font-size:13.5px;outline:none;
+}
+.sb-search input::placeholder{color:var(--text-faint)}
+.sb-search input:focus{border-color:var(--accent)}
+.sb-list{flex:1;overflow-y:auto;padding:4px 8px 8px;min-height:0}
+.sb-cat{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:14px 8px 4px;font-size:11px;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--text-faint);
+}
+.sb-item{
+  width:100%;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;
+  color:var(--text-dim);font-size:14.5px;font-weight:500;text-align:left;transition:background .12s,color .12s;
+}
+.sb-item:hover{background:var(--raised);color:var(--text)}
+.sb-item.active{background:var(--raised-2);color:var(--text);font-weight:600}
+.sb-swatch{width:20px;height:20px;border-radius:6px;flex:0 0 20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.sb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-pip{font-size:10px;font-weight:800;padding:2px 6px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
+.pip-review{background:var(--warn-soft);color:var(--warn)}
+.pip-queue{background:var(--accent-soft);color:var(--accent)}
+.sb-empty{padding:18px 10px;color:var(--text-faint);font-size:13px;line-height:1.6}
+
+/* account panel, bottom of sidebar */
+.sb-user{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:var(--rail);border-top:1px solid var(--line-soft);
+}
+.avatar{
+  width:32px;height:32px;border-radius:50%;flex:0 0 32px;display:grid;place-items:center;
+  font-size:12px;font-weight:800;color:#fff;background:var(--raised-2);position:relative;
+}
+.avatar.admin{background:var(--accent)}
+.avatar::after{
+  content:"";position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;
+  background:var(--text-faint);border:3px solid var(--rail);box-sizing:content-box;
+}
+.avatar.admin::after{background:var(--good)}
+.sb-user-meta{flex:1;min-width:0;line-height:1.25}
+.sb-user-meta b{display:block;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-user-meta span{font-size:11px;color:var(--text-faint)}
+.icon-btn{
+  width:32px;height:32px;border-radius:6px;display:grid;place-items:center;color:var(--text-dim);
+  transition:background .12s,color .12s;
+}
+.icon-btn:hover{background:var(--raised);color:var(--text)}
+
+/* ---------- main ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--canvas)}
+.topbar{
+  height:52px;flex:0 0 52px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  border-bottom:1px solid var(--line-soft);box-shadow:0 1px 0 rgba(0,0,0,.12);
+}
+.topbar .hash{color:var(--text-faint);font-size:20px;font-weight:400;line-height:1}
+.topbar h2{font-size:15.5px;font-weight:700;margin:0;letter-spacing:-.01em}
+.topbar .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+.topbar .desc{
+  font-size:13px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
+}
+.menu-btn{display:none}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;border-radius:6px;
+  font-size:13.5px;font-weight:600;background:var(--raised-2);color:var(--text);
+  transition:background .12s,color .12s;white-space:nowrap;
+}
+.btn:hover{background:var(--line)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-ghost{background:transparent;color:var(--text-dim)}
+.btn-ghost:hover{background:var(--raised);color:var(--text)}
+.btn-lg{height:40px;padding:0 20px;font-size:14.5px}
+.btn[disabled]{opacity:.5;pointer-events:none}
+
+.tabs{
+  display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--line-soft);
+  flex:0 0 auto;overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  position:relative;padding:12px 12px 11px;font-size:13.5px;font-weight:600;color:var(--text-faint);
+  white-space:nowrap;transition:color .12s;
+}
+.tab:hover{color:var(--text-dim)}
+.tab.active{color:var(--text)}
+.tab.active::after{
+  content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px;background:var(--accent);
+}
+.scroll{flex:1;overflow-y:auto;min-height:0}
+.page{max-width:1080px;margin:0 auto;padding:28px 28px 96px}
+
+/* ---------- generic content ---------- */
+.section{margin-top:40px}
+.section:first-child{margin-top:0}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.sec-head h3{font-size:19px;font-weight:700;margin:0;letter-spacing:-.015em}
+.sec-head .count{font-size:12px;color:var(--text-faint);font-weight:600}
+.sec-sub{color:var(--text-dim);font-size:13.5px;margin:0 0 18px;max-width:66ch}
+.eyebrow{
+  font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);
+}
+.card{background:var(--raised);border:1px solid var(--line-soft);border-radius:var(--radius)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* hero */
+.hero{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.hero-mark{
+  width:96px;height:96px;flex:0 0 96px;border-radius:20px;display:grid;place-items:center;
+  background:var(--raised);border:1px solid var(--line-soft);
+}
+.hero-body{flex:1;min-width:260px}
+.hero-body h3{font-size:26px;font-weight:800;margin:0 0 4px;letter-spacing:-.025em;text-wrap:balance}
+.hero-body p{margin:0 0 12px;color:var(--text-dim);font-size:14.5px;max-width:60ch}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:20px;
+  background:var(--raised);border:1px solid var(--line-soft);font-size:12px;font-weight:600;color:var(--text-dim);
+}
+.chip .mono{font-size:11.5px}
+.chip.good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.chip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.chip.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* banner */
+.banner{
+  display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:var(--radius);
+  background:var(--warn-soft);border-left:3px solid var(--warn);margin-bottom:24px;
+}
+.banner b{display:block;font-size:13.5px;margin-bottom:2px}
+.banner p{margin:0;font-size:13px;color:var(--text-dim);max-width:70ch}
+.banner .btn{margin-left:auto;flex:0 0 auto}
+
+/* overview grid */
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ov-card{padding:16px;display:flex;flex-direction:column;gap:10px}
+.ov-card .eyebrow{margin-bottom:-2px}
+.ov-strip{display:flex;height:44px;border-radius:8px;overflow:hidden}
+.ov-strip i{flex:1;display:block}
+.ov-val{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.ov-note{font-size:12.5px;color:var(--text-faint);line-height:1.45}
+.meter{height:6px;border-radius:3px;background:var(--raised-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:3px;background:var(--good)}
+
+/* ---------- color swatches ---------- */
+.swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:14px}
+.swatch{
+  text-align:left;border-radius:var(--radius);overflow:hidden;background:var(--raised);
+  border:1px solid var(--line-soft);display:flex;flex-direction:column;
+  transition:transform .14s ease,box-shadow .14s ease,border-color .14s;
+}
+.swatch:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line)}
+.swatch:focus-visible{box-shadow:var(--ring)}
+.chip-well{
+  height:112px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:10px;gap:8px;
+}
+.copy-hint{
+  font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  padding:4px 8px;border-radius:20px;background:rgba(0,0,0,.28);color:#fff;
+  opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s;
+}
+.chip-well.on-light .copy-hint{background:rgba(255,255,255,.55);color:#111}
+.swatch:hover .copy-hint,.swatch:focus-visible .copy-hint{opacity:1;transform:translateY(0)}
+.contrast-tag{
+  font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:5px;letter-spacing:.03em;
+  background:rgba(0,0,0,.28);color:#fff;
+}
+.chip-well.on-light .contrast-tag{background:rgba(255,255,255,.55);color:#111}
+.swatch-body{padding:11px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.swatch-name{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.swatch-role{font-size:12px;color:var(--text-faint);line-height:1.45}
+.val-list{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.val{
+  display:flex;align-items:center;gap:8px;width:100%;padding:4px 6px;border-radius:5px;
+  font-size:12px;text-align:left;transition:background .12s;
+}
+.val:hover{background:var(--raised-2)}
+.val .k{width:52px;flex:0 0 52px;font-size:10.5px;font-weight:800;letter-spacing:.05em;color:var(--text-faint);text-transform:uppercase}
+.val .v{flex:1;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.val .src{font-size:11px;color:var(--text-faint);opacity:.75}
+.val:hover .src{opacity:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-faint);margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- typography ---------- */
+.seg{display:inline-flex;padding:3px;background:var(--rail);border-radius:8px;gap:2px}
+.seg button{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;color:var(--text-dim)}
+.seg button.active{background:var(--raised-2);color:var(--text)}
+.type-row{padding:20px;margin-bottom:12px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.type-spec{flex:0 0 216px;display:flex;flex-direction:column;gap:8px}
+.type-spec .role{font-size:14px;font-weight:700}
+.type-spec .fam{font-size:13px;color:var(--text-dim)}
+.spec-table{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;margin-top:2px}
+.spec-table dt{color:var(--text-faint);font-weight:600}
+.spec-table dd{margin:0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--text-dim)}
+.type-sample{flex:1;min-width:240px;color:var(--text);overflow:hidden}
+.type-usage{
+  flex-basis:100%;font-size:12.5px;color:var(--text-faint);border-top:1px solid var(--line-soft);
+  padding-top:12px;line-height:1.5;
+}
+.scale-note{
+  font-size:12.5px;color:var(--text-faint);background:var(--raised);border:1px solid var(--line-soft);
+  border-radius:var(--radius);padding:12px 14px;margin-top:16px;line-height:1.55;
+}
+
+/* ---------- logo ---------- */
+.logo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.logo-stage{
+  padding:28px;display:grid;place-items:center;min-height:180px;border-radius:var(--radius);
+  background:var(--raised);border:1px solid var(--line-soft);
+}
+.logo-stage.inverse{background:#141519}
+.logo-stage.tint{background:var(--accent-soft)}
+.stage-cap{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  font-size:12px;color:var(--text-faint);margin-top:8px;
+}
+.stage-cap span:first-child{white-space:nowrap}
+.stage-cap span:last-child{text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.rule{padding:14px;border-radius:var(--radius);border:1px solid var(--line-soft);background:var(--raised)}
+.rule .head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:8px}
+.rule.do .head{color:var(--good)}
+.rule.dont .head{color:var(--bad)}
+.rule-stage{
+  height:104px;border-radius:8px;background:var(--raised-2);display:grid;place-items:center;
+  overflow:hidden;margin-bottom:10px;
+}
+.rule p{margin:0;font-size:12.5px;color:var(--text-faint);line-height:1.5}
+.clearspace{position:relative;display:inline-grid;place-items:center;padding:32px}
+.clearspace::before{
+  content:"";position:absolute;inset:0;border:1px dashed var(--accent);border-radius:4px;opacity:.7;
+}
+.cs-tag{
+  position:absolute;font-size:10px;font-weight:800;color:var(--accent);background:var(--raised);
+  padding:0 4px;font-family:var(--font-mono);
+}
+
+/* ---------- assets ---------- */
+.file-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line-soft);
+}
+.file-row:last-child{border-bottom:none}
+.file-ico{
+  width:36px;height:36px;flex:0 0 36px;border-radius:8px;display:grid;place-items:center;
+  background:var(--raised-2);font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--text-dim);
+}
+.file-meta{flex:1;min-width:0}
+.file-meta b{display:block;font-size:13.5px;font-weight:600}
+.file-meta span{font-size:12px;color:var(--text-faint)}
+
+/* ---------- home / all brands ---------- */
+.brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.brand-card{
+  text-align:left;border-radius:var(--radius);overflow:hidden;background:var(--raised);
+  border:1px solid var(--line-soft);transition:transform .14s,box-shadow .14s,border-color .14s;
+}
+.brand-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--line)}
+.bc-strip{display:flex;height:72px}
+.bc-strip i{flex:1}
+.bc-body{padding:12px 14px 14px;display:flex;gap:11px;align-items:flex-start}
+.bc-mark{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:grid;place-items:center;background:var(--raised-2)}
+.bc-text{flex:1;min-width:0}
+.bc-text b{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em}
+.bc-text span{font-size:12px;color:var(--text-faint)}
+
+/* ---------- modal ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(8,9,12,.72);backdrop-filter:blur(2px);
+  display:none;place-items:center;padding:24px;z-index:100;
+}
+.overlay.open{display:grid;animation:fade .16s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%;max-width:480px;background:var(--canvas);border-radius:14px;box-shadow:var(--shadow-lg);
+  overflow:hidden;animation:pop .2s cubic-bezier(.2,.9,.3,1.2);max-height:88vh;display:flex;flex-direction:column;
+}
+.modal.wide{max-width:620px}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:none}}
+.modal-head{padding:22px 22px 6px;text-align:center}
+.modal-head.left{text-align:left}
+.modal-head h3{margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.modal-head p{margin:0;font-size:14px;color:var(--text-dim)}
+.modal-body{padding:18px 22px;overflow-y:auto;flex:1;min-height:0}
+.modal-foot{
+  padding:16px 22px;background:var(--sidebar);display:flex;align-items:center;justify-content:flex-end;gap:10px;
+}
+.modal-foot .spacer{flex:1}
+.field{margin-bottom:16px}
+.field label{
+  display:block;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:7px;
+}
+.field input{
+  width:100%;height:40px;border-radius:5px;border:1px solid var(--rail);background:var(--rail);
+  padding:0 11px;outline:none;font-size:15px;
+}
+.field input:focus{border-color:var(--accent)}
+.hint{font-size:12px;color:var(--text-faint);margin-top:8px;line-height:1.5}
+.hint code{font-family:var(--font-mono);background:var(--raised-2);padding:1px 5px;border-radius:4px;font-size:11.5px}
+.sso{display:flex;gap:8px;margin-bottom:16px}
+.sso .btn{flex:1;justify-content:center}
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--text-faint);font-size:11px;font-weight:700;letter-spacing:.06em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* dropzone */
+.drop{
+  border:2px dashed var(--line);border-radius:12px;padding:34px 20px;text-align:center;
+  background:var(--raised);transition:border-color .15s,background .15s;cursor:pointer;
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .big{font-size:30px;margin-bottom:8px;line-height:1}
+.drop b{display:block;font-size:15px;margin-bottom:4px}
+.drop span{font-size:12.5px;color:var(--text-faint)}
+
+/* pipeline */
+.pipe{display:flex;flex-direction:column;gap:2px}
+.step{display:flex;align-items:center;gap:12px;padding:9px 4px;font-size:13.5px;color:var(--text-faint)}
+.step .dot{
+  width:20px;height:20px;flex:0 0 20px;border-radius:50%;display:grid;place-items:center;
+  background:var(--raised-2);font-size:11px;font-weight:800;color:var(--text-faint);
+}
+.step.run{color:var(--text)}
+.step.run .dot{background:var(--accent-soft);color:var(--accent)}
+.step.done{color:var(--text-dim)}
+.step.done .dot{background:var(--good);color:#fff}
+.step .t{flex:1}
+.step .ms{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums}
+.spin{
+  width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);border-top-color:transparent;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* review list */
+.rev-row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;background:var(--raised);margin-bottom:8px}
+.rev-sw{width:40px;height:40px;flex:0 0 40px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.rev-meta{flex:1;min-width:0}
+.rev-meta b{display:block;font-size:13.5px;font-weight:600}
+.rev-meta span{font-size:11.5px;font-family:var(--font-mono);color:var(--text-faint)}
+.conf{font-size:11px;font-weight:800;padding:3px 8px;border-radius:20px}
+
+/* toast */
+.toasts{
+  position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:200;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;
+}
+.toast{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;
+  background:var(--rail);color:var(--text);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:600;
+  border:1px solid var(--line);animation:rise .22s cubic-bezier(.2,.9,.3,1.2);
+  max-width:min(90vw,540px);
+}
+.toast>span:not(.mono){white-space:nowrap}
+.toast .mono{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.toast .sw{width:16px;height:16px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.toast .mono{font-size:12.5px;color:var(--text-dim)}
+
+/* responsive */
+.scrim{display:none}
+@media (max-width:900px){
+  .rail,.sidebar{
+    position:fixed;top:0;bottom:0;z-index:60;transform:translateX(-100%);transition:transform .2s ease;
+  }
+  .rail{left:0}
+  .sidebar{left:72px}
+  body.nav-open .rail,body.nav-open .sidebar{transform:none}
+  body.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
+  .menu-btn{display:grid}
+  .page{padding:20px 16px 80px}
+  .topbar .desc{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- brand rail -->
+  <nav class="rail" id="rail" aria-label="Brands"></nav>
+
+  <!-- library sidebar -->
+  <aside class="sidebar">
+    <div class="sb-head"><span class="dot"></span><h1>Spectra</h1><span class="eyebrow" style="margin-left:auto">Library</span></div>
+    <div class="sb-search">
+      <input id="search" type="search" placeholder="Search brands, colors, fonts" aria-label="Search the library">
+    </div>
+    <div class="sb-list" id="sbList"></div>
+    <div class="sb-user" id="sbUser"></div>
+  </aside>
+
+  <!-- main -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Show library">☰</button>
+      <span class="hash" id="topHash">#</span>
+      <h2 id="topTitle">Library</h2>
+      <span class="sep"></span>
+      <span class="desc" id="topDesc"></span>
+      <button class="icon-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+      <div id="authSlot"></div>
+    </header>
+    <nav class="tabs" id="tabs" aria-label="Brand sections"></nav>
+    <div class="scroll" id="scroll"><div class="page" id="page"></div></div>
+  </main>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<!-- login -->
+<div class="overlay" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="loginTitle">Welcome back</h3>
+      <p>Sign in to publish and edit brands.</p>
+    </div>
+    <div class="modal-body">
+      <div class="sso">
+        <button class="btn" style="flex:1;justify-content:center" data-sso="Google Workspace">Google Workspace</button>
+        <button class="btn" style="flex:1;justify-content:center" data-sso="Okta">Okta SSO</button>
+      </div>
+      <div class="divider">OR</div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" value="studio@spectra.design" autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="loginPass">Password</label>
+          <input id="loginPass" type="password" value="demo-password" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-lg" type="submit" style="width:100%;justify-content:center">Sign in</button>
+      </form>
+      <p class="hint">Mockup — any credentials sign you in as <code>Admin</code>. Real builds swap this for the identity provider described in ARCHITECTURE.md.</p>
+    </div>
+  </div>
+</div>
+
+<!-- add brand -->
+<div class="overlay" id="uploadModal" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+  <div class="modal wide">
+    <div class="modal-head left">
+      <h3 id="upTitle">Add a brand</h3>
+      <p id="upSub">Drop the brand guide PDF. Spectra reads it and proposes the palette, type stack and logo rules.</p>
+    </div>
+    <div class="modal-body" id="upBody"></div>
+    <div class="modal-foot" id="upFoot"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script>
+"use strict";
+
+/* =============================================================
+   1. COLOR MATH
+   Stated values (printed in the guide) always win. Anything we
+   compute is labelled as derived, so nobody sends a machine
+   guess to a printer by accident.
+   ============================================================= */
+const hex2rgb = h => {
+  const s = h.replace("#","");
+  const n = parseInt(s.length === 3 ? s.split("").map(c=>c+c).join("") : s, 16);
+  return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+};
+const rgbStr = h => { const c = hex2rgb(h); return `${c.r}, ${c.g}, ${c.b}`; };
+const cmykStr = h => {
+  const {r,g,b} = hex2rgb(h);
+  const R=r/255, G=g/255, B=b/255;
+  const k = 1 - Math.max(R,G,B);
+  if (k === 1) return "0, 0, 0, 100";
+  const c = (1-R-k)/(1-k), m = (1-G-k)/(1-k), y = (1-B-k)/(1-k);
+  return [c,m,y,k].map(v=>Math.round(v*100)).join(", ");
+};
+const hslStr = h => {
+  const {r,g,b} = hex2rgb(h);
+  const R=r/255,G=g/255,B=b/255, mx=Math.max(R,G,B), mn=Math.min(R,G,B), d=mx-mn;
+  let hu=0;
+  if (d) hu = mx===R ? ((G-B)/d+(G<B?6:0)) : mx===G ? ((B-R)/d+2) : ((R-G)/d+4);
+  const l=(mx+mn)/2, s = d ? d/(1-Math.abs(2*l-1)) : 0;
+  return `${Math.round(hu*60)}, ${Math.round(s*100)}%, ${Math.round(l*100)}%`;
+};
+const lum = h => {
+  const {r,g,b} = hex2rgb(h);
+  const f = v => { v/=255; return v<=.03928 ? v/12.92 : Math.pow((v+.055)/1.055,2.4); };
+  return .2126*f(r) + .7152*f(g) + .0722*f(b);
+};
+const contrast = (a,b) => { const L1=lum(a), L2=lum(b); return (Math.max(L1,L2)+.05)/(Math.min(L1,L2)+.05); };
+const isLight = h => lum(h) > .45;
+/* Best foreground for text sitting on this color, plus the WCAG grade. */
+const onColor = h => {
+  const w = contrast(h,"#FFFFFF"), k = contrast(h,"#111111");
+  const fg = w >= k ? "#FFFFFF" : "#111111", ratio = Math.max(w,k);
+  return { fg, ratio, grade: ratio>=7 ? "AAA" : ratio>=4.5 ? "AA" : ratio>=3 ? "AA Large" : "Fails" };
+};
+const hsl2hex = (h,s,l) => {
+  h=((h%360)+360)%360; s/=100; l/=100;
+  const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+  const seg=[[c,x,0],[x,c,0],[0,c,x],[0,x,c],[x,0,c],[c,0,x]][Math.floor(h/60)%6];
+  return "#" + seg.map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("").toUpperCase();
+};
+
+/* =============================================================
+   2. SEED DATA — four fictional brands, as if already extracted
+   ============================================================= */
+const BRANDS = [
+{
+  id:"verdant", name:"Verdant Coffee Roasters", short:"Verdant", monogram:"VC", mark:0, status:"published",
+  tagline:"Small-lot coffee roasted in Bellingham. Warm, plain-spoken, never precious.",
+  source:{ file:"verdant-brand-guide-v4.pdf", pages:52, size:"18.4 MB", extracted:"12 Aug 2026", confidence:96, owner:"Nadia Okafor" },
+  colors:[
+    { group:"Primary", items:[
+      { name:"Verdant Green", hex:"#1F5D3A", cmyk:"88, 38, 82, 32", pantone:"PANTONE 561 C", note:"The brand. Packaging, awnings, headline type." },
+      { name:"Roast Black",  hex:"#171412", cmyk:"64, 62, 65, 62", pantone:"PANTONE Black 6 C", note:"Body copy and photographic overlays." }
+    ]},
+    { group:"Secondary", items:[
+      { name:"Cascara",   hex:"#C8613B", cmyk:"16, 71, 84, 3", pantone:"PANTONE 173 C", note:"Seasonal packaging and retail signage only." },
+      { name:"Chaff",     hex:"#E8DCC6", cmyk:"8, 10, 24, 0", pantone:"PANTONE 7500 C", note:"Large background fields. Never for type." },
+      { name:"Bellingham Sky", hex:"#6E93A6", cmyk:"58, 30, 25, 2", pantone:"PANTONE 5493 C", note:"Wholesale and trade material." }
+    ]},
+    { group:"Neutrals", items:[
+      { name:"Paper",  hex:"#F7F5F1", note:"Digital background. Prints as unprinted stock." },
+      { name:"Ash",    hex:"#8A8781", note:"Rules, dividers, disabled states." },
+      { name:"Grounds",hex:"#3A342F", note:"Secondary type on light grounds." }
+    ]}
+  ],
+  type:{
+    digital:[
+      { role:"Display", family:"Canela Deck", stack:'Georgia,"Times New Roman",serif', weight:600, italic:false,
+        specs:{ Size:"44px", Leading:"48px", Tracking:"-0.02em", Weight:"Medium 600" },
+        sample:"Roasted the morning it ships", usage:"Hero headlines and campaign statements. One per screen — it loses its force when repeated." },
+      { role:"Heading", family:"Söhne Kräftig", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:700,
+        specs:{ Size:"22px", Leading:"28px", Tracking:"-0.01em", Weight:"Bold 700" },
+        sample:"Where the beans come from", usage:"Section headings, card titles, product names in the shop." },
+      { role:"Body", family:"Söhne Buch", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"16px", Leading:"26px", Tracking:"0", "Max width":"68ch" },
+        sample:"We buy from eleven farms and we name every one of them on the bag.", usage:"All running text. Never below 16px on the web." },
+      { role:"Data", family:"Söhne Mono", stack:'ui-monospace,SFMono-Regular,Menlo,monospace', weight:500,
+        specs:{ Size:"13px", Leading:"20px", Tracking:"0.01em", Numerals:"Tabular" },
+        sample:"LOT 402 · 1,240 kg · 04.11", usage:"Roast dates, lot numbers, order tables." }
+    ],
+    print:[
+      { role:"Display", family:"Canela Deck", stack:'Georgia,"Times New Roman",serif', weight:600,
+        specs:{ Size:"36 pt", Leading:"40 pt", Tracking:"-10", Colour:"Verdant Green" },
+        sample:"Roasted the morning it ships", usage:"Poster and packaging headlines. Optical kerning, always." },
+      { role:"Subhead", family:"Söhne Kräftig", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:700,
+        specs:{ Size:"14 pt", Leading:"18 pt", Tracking:"+5", Case:"Sentence" },
+        sample:"Where the beans come from", usage:"Bag panels, shelf talkers, menu sections." },
+      { role:"Body", family:"Söhne Buch", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"9.5 pt", Leading:"14 pt", Tracking:"0", Minimum:"7 pt" },
+        sample:"We buy from eleven farms and we name every one of them on the bag.", usage:"Bag back panels and collateral. Never below 7 pt on kraft stock." },
+      { role:"Legal", family:"Söhne Buch", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"6 pt", Leading:"8 pt", Tracking:"+10", Colour:"Roast Black" },
+        sample:"Net wt. 340 g (12 oz) · Roasted and packed in Bellingham, WA", usage:"Statutory packaging text. Sits in the bottom 12 mm of the panel." }
+    ]
+  },
+  logo:{
+    minPrint:"22 mm wide", minDigital:"96 px wide", clearspace:"Equal to the height of the mark's inner ring on all four sides.",
+    dos:["Full-colour on Paper or Chaff","Reversed to Paper on Verdant Green","Single-colour Roast Black where print is limited to one ink"],
+    donts:["Stretch, condense or rotate the mark","Recolour it to anything outside the primary palette","Place it on a photograph without the solid holding shape"]
+  },
+  assets:[
+    { name:"verdant-logo-primary.svg", kind:"SVG", meta:"Vector · 14 KB · full colour" },
+    { name:"verdant-logo-reversed.svg", kind:"SVG", meta:"Vector · 13 KB · for dark grounds" },
+    { name:"verdant-palette.ase", kind:"ASE", meta:"Adobe swatch exchange · 9 colours" },
+    { name:"verdant-tokens.json", kind:"JSON", meta:"Design tokens · W3C format · 2 KB" },
+    { name:"verdant-brand-guide-v4.pdf", kind:"PDF", meta:"Source document · 52 pages · 18.4 MB" }
+  ]
+},
+{
+  id:"helio", name:"Helio Bank", short:"Helio", monogram:"HB", mark:1, status:"published",
+  tagline:"A retail bank that explains itself. Confident, never loud.",
+  source:{ file:"helio-identity-standards-2026.pdf", pages:88, size:"41.2 MB", extracted:"29 Jul 2026", confidence:91, owner:"Marcus Bell" },
+  colors:[
+    { group:"Primary", items:[
+      { name:"Helio Blue", hex:"#12386B", cmyk:"100, 78, 26, 10", pantone:"PANTONE 654 C", note:"Primary. Cards, app chrome, signage." },
+      { name:"Solar Gold", hex:"#E5A82E", cmyk:"8, 36, 92, 0", pantone:"PANTONE 143 C", note:"Accent only — never more than 10% of a layout." }
+    ]},
+    { group:"Secondary", items:[
+      { name:"Deep Water", hex:"#0A1E38", cmyk:"100, 88, 46, 55", pantone:"PANTONE 289 C", note:"App dark mode ground and premium card stock." },
+      { name:"Daybreak",  hex:"#5EA9DE", cmyk:"62, 21, 0, 0", pantone:"PANTONE 292 C", note:"Illustration and data visualisation." }
+    ]},
+    { group:"Functional", items:[
+      { name:"Approve", hex:"#1E8E5A", note:"Confirmations and positive balances. Never decorative." },
+      { name:"Attention", hex:"#B5641A", note:"Warnings and pending states." },
+      { name:"Decline", hex:"#B3352F", note:"Errors and declined transactions." }
+    ]},
+    { group:"Neutrals", items:[
+      { name:"Cloud", hex:"#F4F6F9", note:"App and web background." },
+      { name:"Slate", hex:"#5A6472", note:"Secondary type, labels, metadata." },
+      { name:"Ink",   hex:"#141A22", note:"Primary type on light grounds." }
+    ]}
+  ],
+  type:{
+    digital:[
+      { role:"Display", family:"GT Sectra Fine", stack:'Georgia,"Times New Roman",serif', weight:600,
+        specs:{ Size:"40px", Leading:"46px", Tracking:"-0.02em", Colour:"Helio Blue" },
+        sample:"Your money, explained", usage:"Marketing site heroes. Not used inside the product." },
+      { role:"Product heading", family:"Inter Tight", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:700,
+        specs:{ Size:"20px", Leading:"26px", Tracking:"-0.01em", Weight:"Bold 700" },
+        sample:"Everyday account", usage:"Screen titles and card headers in the mobile app." },
+      { role:"Body", family:"Inter", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"16px", Leading:"24px", Tracking:"0", Minimum:"15px" },
+        sample:"Transfers between Helio accounts arrive instantly, day or night.", usage:"All product copy. 15px is the floor for accessibility." },
+      { role:"Numerals", family:"Inter Tabular", stack:'ui-monospace,SFMono-Regular,Menlo,monospace', weight:600,
+        specs:{ Size:"18px", Leading:"24px", Numerals:"Tabular lining", Tracking:"0" },
+        sample:"£1,284.06  ·  −£45.20", usage:"Balances and transaction amounts. Tabular figures are mandatory." }
+    ],
+    print:[
+      { role:"Display", family:"GT Sectra Fine", stack:'Georgia,"Times New Roman",serif', weight:600,
+        specs:{ Size:"30 pt", Leading:"34 pt", Tracking:"-8", Colour:"Helio Blue" },
+        sample:"Your money, explained", usage:"Brochure covers and branch window graphics." },
+      { role:"Subhead", family:"Inter Tight", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:700,
+        specs:{ Size:"12 pt", Leading:"16 pt", Tracking:"0", Case:"Sentence" },
+        sample:"Everyday account", usage:"Product sheets and in-branch collateral." },
+      { role:"Body", family:"Inter", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"9 pt", Leading:"13 pt", Tracking:"0", Minimum:"8 pt" },
+        sample:"Transfers between Helio accounts arrive instantly, day or night.", usage:"Statements and letters. 8 pt minimum for regulated copy." },
+      { role:"Terms", family:"Inter", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"7 pt", Leading:"9.5 pt", Tracking:"+4", Colour:"Slate" },
+        sample:"Helio Bank plc is authorised and regulated. Registered in England no. 000000.", usage:"Regulatory footers. Contrast must clear 4.5:1 against the stock." }
+    ]
+  },
+  logo:{
+    minPrint:"18 mm wide", minDigital:"80 px wide", clearspace:"One half of the sun mark's diameter on all four sides.",
+    dos:["Helio Blue on Cloud for all primary use","Reversed to Cloud on Helio Blue or Deep Water","Solar Gold mark only on Deep Water, and only above 40 mm"],
+    donts:["Set the gold mark on white — it fails contrast","Add drop shadows, bevels or outer glows","Lock the mark up with a sub-brand without approval"]
+  },
+  assets:[
+    { name:"helio-logo-primary.svg", kind:"SVG", meta:"Vector · 11 KB · Helio Blue" },
+    { name:"helio-logo-reversed.svg", kind:"SVG", meta:"Vector · 11 KB · for dark grounds" },
+    { name:"helio-palette.ase", kind:"ASE", meta:"Adobe swatch exchange · 11 colours" },
+    { name:"helio-tokens.json", kind:"JSON", meta:"Design tokens · W3C format · 4 KB" },
+    { name:"helio-identity-standards-2026.pdf", kind:"PDF", meta:"Source document · 88 pages · 41.2 MB" }
+  ]
+},
+{
+  id:"northwind", name:"Northwind Health", short:"Northwind", monogram:"NH", mark:2, status:"published",
+  tagline:"Community clinics. Calm, legible, and readable at arm's length.",
+  source:{ file:"northwind-visual-identity.pdf", pages:36, size:"12.8 MB", extracted:"03 Aug 2026", confidence:88, owner:"Priya Raman" },
+  colors:[
+    { group:"Primary", items:[
+      { name:"Northwind Teal", hex:"#0E6E72", cmyk:"88, 38, 46, 12", pantone:"PANTONE 322 C", note:"Wayfinding, uniforms, primary buttons." },
+      { name:"Clinic Navy", hex:"#16304A", cmyk:"96, 74, 42, 32", pantone:"PANTONE 302 C", note:"Headings and printed body copy." }
+    ]},
+    { group:"Secondary", items:[
+      { name:"Warm Sand", hex:"#E4D3B8", cmyk:"10, 16, 32, 0", pantone:"PANTONE 7501 C", note:"Waiting-room graphics and patient leaflets." },
+      { name:"Fern",      hex:"#5E8C4A", cmyk:"68, 30, 92, 12", pantone:"PANTONE 370 C", note:"Wellbeing and prevention material only." }
+    ]},
+    { group:"Neutrals", items:[
+      { name:"Linen", hex:"#FAF8F5", note:"Print and screen background." },
+      { name:"Pebble", hex:"#7C8188", note:"Form labels, captions, disabled controls." },
+      { name:"Charcoal", hex:"#20262C", note:"Body copy at every size." }
+    ]}
+  ],
+  type:{
+    digital:[
+      { role:"Heading", family:"Untitled Sans Medium", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:600,
+        specs:{ Size:"26px", Leading:"32px", Tracking:"-0.01em", Colour:"Clinic Navy" },
+        sample:"Book an appointment", usage:"Page titles across the patient portal." },
+      { role:"Body", family:"Untitled Sans Regular", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"17px", Leading:"28px", Tracking:"0", Minimum:"17px" },
+        sample:"Bring a list of any medicines you take, including anything you buy yourself.", usage:"All patient-facing copy. 17px floor — most of our readers are over 60." },
+      { role:"Form label", family:"Untitled Sans Medium", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:600,
+        specs:{ Size:"14px", Leading:"20px", Tracking:"0.01em", Case:"Sentence" },
+        sample:"Date of birth", usage:"Labels sit above the field, never inside it as a placeholder." }
+    ],
+    print:[
+      { role:"Heading", family:"Untitled Sans Medium", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:600,
+        specs:{ Size:"18 pt", Leading:"22 pt", Tracking:"0", Colour:"Clinic Navy" },
+        sample:"Book an appointment", usage:"Leaflet and poster headings." },
+      { role:"Body", family:"Untitled Sans Regular", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"11 pt", Leading:"16 pt", Tracking:"0", Minimum:"11 pt" },
+        sample:"Bring a list of any medicines you take, including anything you buy yourself.", usage:"Patient information. 11 pt is a hard floor, set by the accessibility policy." },
+      { role:"Wayfinding", family:"Untitled Sans Medium", stack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif', weight:600,
+        specs:{ Size:"90 pt", Leading:"96 pt", Tracking:"+10", Contrast:"7:1 min" },
+        sample:"Ward 4 · Radiology", usage:"Corridor signage, read at 8 metres. Cap height 60 mm minimum." }
+    ]
+  },
+  logo:{
+    minPrint:"20 mm wide", minDigital:"88 px wide", clearspace:"The width of the letter N in the wordmark, on all four sides.",
+    dos:["Teal on Linen for everything patient-facing","Reversed to Linen on Clinic Navy","Mono Charcoal on fax, forms and one-colour print"],
+    donts:["Use the mark without the wordmark below 40 mm","Set it on Warm Sand — contrast drops under 3:1","Recolour it per department or per clinic"]
+  },
+  assets:[
+    { name:"northwind-logo-primary.svg", kind:"SVG", meta:"Vector · 9 KB · teal" },
+    { name:"northwind-logo-mono.svg", kind:"SVG", meta:"Vector · 8 KB · single colour" },
+    { name:"northwind-palette.ase", kind:"ASE", meta:"Adobe swatch exchange · 7 colours" },
+    { name:"northwind-visual-identity.pdf", kind:"PDF", meta:"Source document · 36 pages · 12.8 MB" }
+  ]
+},
+{
+  id:"kite", name:"Kite Athletics", short:"Kite", monogram:"KA", mark:3, status:"review",
+  tagline:"Running kit for people who are not fast. Blunt, funny, high-contrast.",
+  source:{ file:"kite-brand-book-draft.pdf", pages:24, size:"7.1 MB", extracted:"09 Aug 2026", confidence:71, owner:"unassigned" },
+  colors:[
+    { group:"Primary", items:[
+      { name:"Kite Orange", hex:"#FF5A1F", cmyk:"0, 76, 92, 0", pantone:"PANTONE 1655 C", note:"Everything loud. Kit flashes, packaging, campaign type." },
+      { name:"Track Black", hex:"#101014", cmyk:"70, 62, 58, 62", pantone:"PANTONE Black C", note:"Grounds and body copy." }
+    ]},
+    { group:"Secondary", items:[
+      { name:"Chalk",    hex:"#F2F0EB", note:"Reverse ground. Extraction confidence 62% — verify against p.14." },
+      { name:"Split Cyan", hex:"#19C3D9", note:"Digital only. Not colour-matched for print yet." }
+    ]}
+  ],
+  type:{
+    digital:[
+      { role:"Display", family:"Druk Wide Bold", stack:'"Arial Black","Helvetica Neue",Impact,sans-serif', weight:900,
+        specs:{ Size:"52px", Leading:"52px", Tracking:"0.01em", Case:"Uppercase" },
+        sample:"SLOW IS A PACE", usage:"Campaign headlines. Uppercase only — the lowercase cut is not licensed." },
+      { role:"Body", family:"Suisse Int'l", stack:'"Helvetica Neue",Helvetica,Arial,sans-serif', weight:400,
+        specs:{ Size:"16px", Leading:"25px", Tracking:"0" },
+        sample:"Kit that works at eleven minutes a mile.", usage:"Product copy and editorial." }
+    ],
+    print:[
+      { role:"Display", family:"Druk Wide Bold", stack:'"Arial Black","Helvetica Neue",Impact,sans-serif', weight:900,
+        specs:{ Size:"42 pt", Leading:"42 pt", Tracking:"+5", Case:"Uppercase" },
+        sample:"SLOW IS A PACE", usage:"Posters and hang tags. Draft — print specs not signed off." }
+    ]
+  },
+  logo:{
+    minPrint:"16 mm wide", minDigital:"72 px wide", clearspace:"Half the height of the kite mark on all sides.",
+    dos:["Orange on Track Black","Chalk on Kite Orange"],
+    donts:["Outline the mark","Use the draft mark on production kit — awaiting sign-off"]
+  },
+  assets:[
+    { name:"kite-brand-book-draft.pdf", kind:"PDF", meta:"Source document · 24 pages · 7.1 MB" },
+    { name:"kite-logo-draft.svg", kind:"SVG", meta:"Vector · 6 KB · not approved" }
+  ]
+}
+];
+
+/* =============================================================
+   3. STATE
+   ============================================================= */
+const state = {
+  brands: BRANDS.slice(),
+  view: "home",          // "home" | brand id
+  tab: "overview",
+  typeMode: "digital",
+  admin: false,
+  query: "",
+  theme: null            // null = follow the OS
+};
+
+const $  = s => document.querySelector(s);
+const el = (t,c,h) => { const n=document.createElement(t); if(c) n.className=c; if(h!=null) n.innerHTML=h; return n; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brandById = id => state.brands.find(b => b.id === id);
+/* Brands still in review are admin-only — that is the whole point of the review gate. */
+const visibleBrands = () => state.admin ? state.brands : state.brands.filter(b => b.status === "published");
+const allColors = b => b.colors.flatMap(g => g.items.map(i => ({...i, group:g.group})));
+
+/* =============================================================
+   4. LOGO MARKS — drawn, not linked, so every brand renders offline
+   ============================================================= */
+function markSVG(brand, size, fill, alt){
+  const c = fill || allColors(brand)[0].hex;
+  const a = alt || "#FFFFFF";
+  const shapes = [
+    /* 0 — coffee: ring with a seam */
+    `<circle cx="32" cy="32" r="26" fill="${c}"/><path d="M32 10c-7 8-7 14 0 22s7 14 0 22" stroke="${a}" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    /* 1 — bank: sun over a horizon */
+    `<rect x="6" y="6" width="52" height="52" rx="14" fill="${c}"/><circle cx="32" cy="27" r="11" fill="${a}"/><rect x="14" y="42" width="36" height="4" rx="2" fill="${a}"/>`,
+    /* 2 — health: rounded cross */
+    `<rect x="6" y="6" width="52" height="52" rx="18" fill="${c}"/><path d="M27 17h10v10h10v10H37v10H27V37H17V27h10z" fill="${a}"/>`,
+    /* 3 — athletics: kite */
+    `<path d="M32 4 58 32 32 60 6 32z" fill="${c}"/><path d="M32 4v56M6 32h52" stroke="${a}" stroke-width="3"/>`
+  ];
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="${esc(brand.name)} mark" focusable="false">${shapes[brand.mark % 4]}</svg>`;
+}
+function lockup(brand, size, color, alt){
+  const stack = (brand.type.digital[0] || {}).stack || "inherit";
+  const weight = (brand.type.digital[0] || {}).weight || 700;
+  return `<span style="display:inline-flex;align-items:center;gap:${size/4}px">
+    ${markSVG(brand, size, color, alt)}
+    <span style="font-family:${stack};font-weight:${weight};font-size:${size*0.52}px;letter-spacing:-.02em;color:${color || allColors(brand)[0].hex};line-height:1">${esc(brand.short)}</span>
+  </span>`;
+}
+
+/* =============================================================
+   5. CLIPBOARD + TOAST
+   ============================================================= */
+async function copy(text, label, swatch){
+  let ok = true;
+  try{
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const ta = el("textarea"); ta.value = text;
+      ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+      document.body.appendChild(ta); ta.select(); ok = document.execCommand("copy"); ta.remove();
+    }
+  }catch(e){ ok = false; }
+  /* a whole palette export is too big to echo — summarise it instead */
+  const preview = text.length > 48
+    ? `${text.split("\n").length} lines · ${text.length} characters`
+    : text;
+  toast(ok ? `Copied ${label}` : "Press ⌘C to copy", preview, ok ? swatch : null, !ok);
+}
+function toast(title, value, swatch, isWarn){
+  const t = el("div","toast");
+  if (swatch) t.appendChild(el("i","sw")).style.background = swatch;
+  t.appendChild(el("span",null,esc(title)));
+  if (value) t.appendChild(el("span","mono",esc(value)));
+  if (isWarn) t.style.borderColor = "var(--warn)";
+  $("#toasts").appendChild(t);
+  setTimeout(()=>{ t.style.transition="opacity .2s,transform .2s"; t.style.opacity=0; t.style.transform="translateY(6px)";
+    setTimeout(()=>t.remove(),220); }, 2100);
+}
+
+/* =============================================================
+   6. RENDER — rail, sidebar, header
+   ============================================================= */
+function renderRail(){
+  const rail = $("#rail"); rail.innerHTML = "";
+  const home = el("div","rail-item" + (state.view==="home" ? " active":""));
+  home.innerHTML = `<button class="rail-btn rail-home" title="All brands" aria-label="All brands">◈</button>`;
+  home.onclick = () => go("home");
+  rail.appendChild(home);
+  rail.appendChild(el("div","rail-divider"));
+
+  visibleBrands().forEach(b => {
+    const item = el("div","rail-item" + (state.view===b.id ? " active":""));
+    const c = allColors(b)[0].hex;
+    item.innerHTML = `<button class="rail-btn" style="background:${c};color:${onColor(c).fg}" title="${esc(b.name)}" aria-label="${esc(b.name)}">${esc(b.monogram)}</button>` +
+      (b.status==="review" ? `<span class="rail-badge" title="Awaiting review">!</span>` : "");
+    item.onclick = () => go(b.id);
+    rail.appendChild(item);
+  });
+
+  const add = el("div","rail-item");
+  add.innerHTML = `<button class="rail-btn rail-add" title="Add a brand" aria-label="Add a brand">+</button>`;
+  add.onclick = () => state.admin ? openUpload() : openLogin("You need admin access to add a brand.");
+  rail.appendChild(add);
+}
+
+function renderSidebar(){
+  const list = $("#sbList"); list.innerHTML = "";
+  const q = state.query.trim().toLowerCase();
+  const match = b => !q || b.name.toLowerCase().includes(q) || b.tagline.toLowerCase().includes(q) ||
+    allColors(b).some(c => c.name.toLowerCase().includes(q) || c.hex.toLowerCase().includes(q)) ||
+    [...b.type.digital, ...b.type.print].some(t => t.family.toLowerCase().includes(q));
+
+  const published = visibleBrands().filter(b => b.status==="published" && match(b));
+  const review    = visibleBrands().filter(b => b.status!=="published" && match(b));
+
+  const row = b => {
+    const btn = el("button","sb-item" + (state.view===b.id ? " active":""));
+    btn.innerHTML = `<i class="sb-swatch" style="background:${allColors(b)[0].hex}"></i>
+      <span class="sb-name">${esc(b.name)}</span>
+      ${b.status==="review" ? '<span class="sb-pip pip-review">Review</span>' : ""}`;
+    btn.onclick = () => go(b.id);
+    return btn;
+  };
+
+  if (published.length){
+    list.appendChild(el("div","sb-cat",`<span>Published — ${published.length}</span>`));
+    published.forEach(b => list.appendChild(row(b)));
+  }
+  if (review.length){
+    list.appendChild(el("div","sb-cat",`<span>Needs review — ${review.length}</span>`));
+    review.forEach(b => list.appendChild(row(b)));
+  }
+  if (!published.length && !review.length){
+    list.appendChild(el("div","sb-empty",`No brand matches <b>${esc(state.query)}</b>.<br>Search covers brand names, colour names, hex values and typeface names.`));
+  }
+
+  const u = $("#sbUser");
+  u.innerHTML = state.admin
+    ? `<div class="avatar admin">SD</div>
+       <div class="sb-user-meta"><b>Studio Admin</b><span>Can publish · Can edit</span></div>
+       <button class="icon-btn" id="logoutBtn" title="Sign out" aria-label="Sign out">⏻</button>`
+    : `<div class="avatar">GU</div>
+       <div class="sb-user-meta"><b>Guest</b><span>Read only</span></div>
+       <button class="icon-btn" id="loginBtn2" title="Sign in" aria-label="Sign in">→</button>`;
+  const lo = $("#logoutBtn"); if (lo) lo.onclick = signOut;
+  const li = $("#loginBtn2"); if (li) li.onclick = () => openLogin();
+}
+
+function renderHeader(){
+  const b = brandById(state.view);
+  $("#topHash").textContent = b ? "#" : "◈";
+  $("#topTitle").textContent = b ? b.short.toLowerCase().replace(/\s+/g,"-") : "all-brands";
+  $("#topDesc").textContent  = b ? b.tagline : `${visibleBrands().length} brands · every colour on this page copies on click`;
+
+  $("#authSlot").innerHTML = state.admin
+    ? `<button class="btn btn-primary" id="addBtn">＋ Add brand</button>`
+    : `<button class="btn btn-primary" id="loginBtn">Log in</button>`;
+  const ab = $("#addBtn");   if (ab) ab.onclick = openUpload;
+  const lb = $("#loginBtn"); if (lb) lb.onclick = () => openLogin();
+
+  const tabs = $("#tabs"); tabs.innerHTML = "";
+  const defs = b
+    ? [["overview","Overview"],["color","Colour"],["type","Typography"],["logo","Logo usage"],["assets","Assets"]]
+    : [["overview","All brands"],["how","How extraction works"]];
+  defs.forEach(([id,label]) => {
+    const t = el("button","tab" + (state.tab===id ? " active":""), esc(label));
+    t.onclick = () => { state.tab = id; renderHeader(); renderPage(); };
+    tabs.appendChild(t);
+  });
+}
+
+/* =============================================================
+   7. RENDER — page bodies
+   ============================================================= */
+function renderPage(){
+  const page = $("#page"); page.innerHTML = "";
+  $("#scroll").scrollTop = 0;
+  const b = brandById(state.view);
+  if (!b) return state.tab==="how" ? renderHow(page) : renderHome(page);
+
+  if (b.status==="review"){
+    const banner = el("div","banner");
+    banner.innerHTML = `<span style="font-size:18px;line-height:1">⚠</span>
+      <div><b>Extracted, not yet approved</b>
+      <p>Spectra read this guide with ${b.source.confidence}% confidence. Values are visible to admins only until someone signs them off. Nothing here should go to a printer yet.</p></div>`;
+    if (state.admin){
+      const btn = el("button","btn btn-primary","Approve and publish");
+      btn.onclick = () => { b.status = "published"; renderAll(); toast("Published to the library", b.name, allColors(b)[0].hex); };
+      banner.appendChild(btn);
+    }
+    page.appendChild(banner);
+  }
+
+  ({ overview:renderOverview, color:renderColor, type:renderType, logo:renderLogo, assets:renderAssets }[state.tab] || renderOverview)(page, b);
+}
+
+function renderHome(page){
+  const visible = visibleBrands();
+  const total = visible.reduce((n,b)=>n+allColors(b).length,0);
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>The library</h3><span class="count">${visible.length} brands · ${total} colours</span></div>
+    <p class="sec-sub">Every brand here started as a PDF someone dropped on the page. Spectra read it, pulled the palette, the type stack and the logo rules, and turned all of it into values you can copy. Pick a brand on the left, or open one below.</p>`;
+  page.appendChild(head);
+
+  const grid = el("div","brand-grid");
+  visible.forEach(b => {
+    const cols = allColors(b).slice(0,6);
+    const card = el("button","brand-card");
+    card.innerHTML = `<div class="bc-strip">${cols.map(c=>`<i style="background:${c.hex}"></i>`).join("")}</div>
+      <div class="bc-body">
+        <span class="bc-mark">${markSVG(b,24)}</span>
+        <span class="bc-text"><b>${esc(b.name)}</b><span>${allColors(b).length} colours · ${b.type.digital.length + b.type.print.length} type styles · ${b.source.pages} pp</span></span>
+        ${b.status==="review" ? '<span class="sb-pip pip-review">Review</span>' : ""}
+      </div>`;
+    card.onclick = () => go(b.id);
+    grid.appendChild(card);
+  });
+  page.appendChild(grid);
+
+  const cta = el("div","section");
+  cta.innerHTML = `<div class="sec-head"><h3>Add one</h3></div>
+    <p class="sec-sub">Admins can drop a new brand guide PDF straight into the library. The extraction runs in front of you, and nothing is published until a human approves it.</p>`;
+  const btn = el("button","btn btn-primary btn-lg", state.admin ? "＋ Add a brand guide" : "Log in to add a brand");
+  btn.onclick = () => state.admin ? openUpload() : openLogin();
+  cta.appendChild(btn);
+  page.appendChild(cta);
+}
+
+function renderOverview(page, b){
+  const cols = allColors(b);
+  const hero = el("div","hero");
+  hero.innerHTML = `<div class="hero-mark">${markSVG(b,56)}</div>
+    <div class="hero-body">
+      <h3>${esc(b.name)}</h3>
+      <p>${esc(b.tagline)}</p>
+      <div class="meta-row">
+        <span class="chip">📄 <span class="mono">${esc(b.source.file)}</span></span>
+        <span class="chip">${b.source.pages} pages</span>
+        <span class="chip">Extracted ${esc(b.source.extracted)}</span>
+        <span class="chip ${b.source.confidence>=90?"good":b.source.confidence>=80?"warn":"bad"}">${b.source.confidence}% confidence</span>
+        <span class="chip">Owner: ${esc(b.source.owner)}</span>
+      </div>
+    </div>`;
+  page.appendChild(hero);
+
+  const grid = el("div","ov-grid"); grid.style.marginTop = "26px";
+  const t0 = b.type.digital[0], t1 = b.type.digital[1] || b.type.digital[0];
+  const risky = cols.filter(c => onColor(c.hex).ratio < 4.5).length;
+  grid.innerHTML = `
+    <div class="card ov-card">
+      <span class="eyebrow">Palette</span>
+      <div class="ov-strip">${cols.slice(0,8).map(c=>`<i style="background:${c.hex}"></i>`).join("")}</div>
+      <span class="ov-note">${cols.length} colours across ${b.colors.length} groups. ${risky ? risky + " need care for text contrast." : "All pass AA against black or white."}</span>
+    </div>
+    <div class="card ov-card">
+      <span class="eyebrow">Type pairing</span>
+      <div class="ov-val" style="font-family:${t0.stack};font-weight:${t0.weight}">${esc(t0.family)}</div>
+      <span class="ov-note">with <b style="font-family:${t1.stack}">${esc(t1.family)}</b> · ${b.type.digital.length} digital styles, ${b.type.print.length} print styles.</span>
+    </div>
+    <div class="card ov-card">
+      <span class="eyebrow">Logo</span>
+      <div style="display:flex;align-items:center;gap:10px">${markSVG(b,34)}<span class="ov-note" style="margin:0">Min ${esc(b.logo.minDigital)} on screen<br>Min ${esc(b.logo.minPrint)} in print</span></div>
+      <span class="ov-note">${b.logo.dos.length} approved uses · ${b.logo.donts.length} restrictions.</span>
+    </div>
+    <div class="card ov-card">
+      <span class="eyebrow">Extraction confidence</span>
+      <div class="ov-val">${b.source.confidence}%</div>
+      <div class="meter"><i style="width:${b.source.confidence}%;background:${b.source.confidence>=90?"var(--good)":b.source.confidence>=80?"var(--warn)":"var(--bad)"}"></i></div>
+      <span class="ov-note">How much of this page came straight off the PDF rather than a person typing it in.</span>
+    </div>`;
+  page.appendChild(grid);
+
+  const quick = el("div","section");
+  quick.innerHTML = `<div class="sec-head"><h3>Copy the essentials</h3><span class="count">click any value</span></div>
+    <p class="sec-sub">The four things people ask for by message twice a week. Now they don't have to ask.</p>`;
+  const row = el("div","swatch-grid");
+  cols.slice(0,4).forEach(c => row.appendChild(swatchCard(c)));
+  quick.appendChild(row);
+  page.appendChild(quick);
+}
+
+/* ---- colour ---- */
+function swatchCard(c){
+  const on = onColor(c.hex);
+  const card = el("button","swatch");
+  card.setAttribute("aria-label", `Copy ${c.name}, hex ${c.hex}`);
+  const stated = !!c.cmyk;
+  const vals = [
+    ["HEX",  c.hex.toUpperCase(), "📄"],
+    ["RGB",  rgbStr(c.hex), "📄"],
+    ["CMYK", c.cmyk || cmykStr(c.hex), stated ? "📄" : "⚙"],
+    ["HSL",  hslStr(c.hex), "⚙"]
+  ];
+  if (c.pantone) vals.push(["Pantone", c.pantone, "📄"]);
+
+  card.innerHTML = `
+    <span class="chip-well${isLight(c.hex) ? " on-light":""}" style="background:${c.hex}">
+      <span class="copy-hint">Click to copy</span>
+      <span class="contrast-tag" title="Contrast against ${on.fg==="#FFFFFF"?"white":"black"}">${on.grade} ${on.ratio.toFixed(1)}:1</span>
+    </span>
+    <span class="swatch-body">
+      <span class="swatch-name">${esc(c.name)}</span>
+      ${c.note ? `<span class="swatch-role">${esc(c.note)}</span>` : ""}
+      <span class="val-list">
+        ${vals.map(([k,v,s]) => `<span class="val" data-copy="${esc(v)}" data-label="${esc(k)}" title="Copy ${esc(k)}">
+            <span class="k">${k}</span><span class="v">${esc(v)}</span><span class="src" title="${s==="📄"?"Stated in the guide":"Derived by Spectra"}">${s}</span>
+          </span>`).join("")}
+      </span>
+    </span>`;
+
+  card.onclick = e => {
+    const hit = e.target.closest(".val");
+    if (hit) copy(hit.dataset.copy, `${c.name} ${hit.dataset.label}`, c.hex);
+    else copy(c.hex.toUpperCase(), `${c.name} HEX`, c.hex);
+  };
+  return card;
+}
+
+function renderColor(page, b){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Colour</h3><span class="count">${allColors(b).length} swatches</span></div>
+    <p class="sec-sub">Click a swatch to copy its hex. Click a single row to copy just that value. Contrast badges are measured against whichever of black or white performs better on that colour.</p>`;
+  page.appendChild(head);
+
+  b.colors.forEach(group => {
+    const sec = el("div","section");
+    sec.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">${esc(group.group)}</h3><span class="count">${group.items.length}</span></div>`;
+    const grid = el("div","swatch-grid");
+    group.items.forEach(c => grid.appendChild(swatchCard(c)));
+    sec.appendChild(grid);
+    page.appendChild(sec);
+  });
+
+  const legend = el("div","legend");
+  legend.innerHTML = `<span>📄 Stated in the guide — read off the page</span>
+    <span>⚙ Derived by Spectra — a conversion, not a print-matched build</span>
+    <span>Contrast badges follow WCAG 2.2</span>`;
+  page.appendChild(legend);
+
+  const exp = el("div","section");
+  exp.innerHTML = `<div class="sec-head"><h3>Take the whole palette</h3></div>
+    <p class="sec-sub">Same values, in the format your tool actually wants.</p>`;
+  const bar = el("div","meta-row");
+  const formats = {
+    "CSS variables": () => allColors(b).map(c => `  --${slug(c.name)}: ${c.hex.toUpperCase()};`).join("\n").replace(/^/,":root{\n") + "\n}",
+    "Design tokens (JSON)": () => JSON.stringify(Object.fromEntries(allColors(b).map(c => [slug(c.name), {$type:"color", $value:c.hex.toUpperCase()}])), null, 2),
+    "Tailwind config": () => "colors: {\n" + allColors(b).map(c=>`  "${slug(c.name)}": "${c.hex.toUpperCase()}",`).join("\n") + "\n}",
+    "SCSS": () => allColors(b).map(c => `$${slug(c.name)}: ${c.hex.toUpperCase()};`).join("\n")
+  };
+  Object.entries(formats).forEach(([label, fn]) => {
+    const btn = el("button","btn", esc(label));
+    btn.onclick = () => copy(fn(), `${b.short} palette as ${label}`, allColors(b)[0].hex);
+    bar.appendChild(btn);
+  });
+  exp.appendChild(bar);
+  page.appendChild(exp);
+}
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+
+/* ---- typography ---- */
+function renderType(page, b){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Typography</h3></div>
+    <p class="sec-sub">Print and digital are different specifications of the same voice — point sizes and leading for one, pixels and line-height for the other. Switch between them here.</p>`;
+  const seg = el("div","seg");
+  [["digital","Digital"],["print","Print"]].forEach(([id,label]) => {
+    const btn = el("button", state.typeMode===id ? "active" : null, label);
+    btn.onclick = () => { state.typeMode = id; renderPage(); };
+    seg.appendChild(btn);
+  });
+  head.appendChild(seg);
+  page.appendChild(head);
+
+  const rows = b.type[state.typeMode] || [];
+  const wrap = el("div","section"); wrap.style.marginTop = "20px";
+  rows.forEach(t => {
+    const isPrint = state.typeMode === "print";
+    const px = isPrint ? Math.round(parseFloat(t.specs.Size) * 1.34) : parseInt(t.specs.Size, 10);
+    const display = Math.max(15, Math.min(px, 56));
+    const row = el("div","card type-row");
+    row.innerHTML = `
+      <div class="type-spec">
+        <span class="role">${esc(t.role)}</span>
+        <span class="fam">${esc(t.family)}</span>
+        <dl class="spec-table">${Object.entries(t.specs).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      </div>
+      <div class="type-sample" style="font-family:${t.stack};font-weight:${t.weight};font-size:${display}px;line-height:1.15;letter-spacing:${(t.specs.Tracking||"0").includes("em")?t.specs.Tracking:"0"};${(t.specs.Case==="Uppercase")?"text-transform:uppercase;":""}">${esc(t.sample)}</div>
+      <div class="type-usage"><b>When to use it —</b> ${esc(t.usage)}</div>`;
+    wrap.appendChild(row);
+  });
+  page.appendChild(wrap);
+
+  const note = el("div","scale-note");
+  note.innerHTML = `<b>About this specimen —</b> the licensed families (${esc([...new Set(rows.map(r=>r.family))].join(", "))}) are not embedded in this mockup, so samples render in a metrically similar fallback. A production build serves the licensed webfonts from the brand's own asset bucket, and the specimen shows the real face.${state.typeMode==="print" ? " Print sizes are shown here scaled to screen; the point sizes in the table are the specification." : ""}`;
+  page.appendChild(note);
+}
+
+/* ---- logo ---- */
+function renderLogo(page, b){
+  const primary = allColors(b)[0].hex;
+  const light = allColors(b).find(c => isLight(c.hex)) || { hex:"#F7F5F1" };
+
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Logo usage</h3></div>
+    <p class="sec-sub">The lockup, the room it needs, the sizes below which it stops working, and the things people keep doing to it anyway.</p>`;
+  page.appendChild(head);
+
+  const grid = el("div","logo-grid");
+  grid.innerHTML = `
+    <div>
+      <div class="logo-stage" style="background:${light.hex}">${lockup(b,52,primary,light.hex)}</div>
+      <div class="stage-cap"><span>Primary — full colour on light</span><span class="mono">${esc(light.hex ? light.hex.toUpperCase():"")}</span></div>
+    </div>
+    <div>
+      <div class="logo-stage" style="background:${primary}">${lockup(b,52,light.hex,primary)}</div>
+      <div class="stage-cap"><span>Reversed on ${esc(allColors(b)[0].name)}</span><span class="mono">${esc(primary.toUpperCase())}</span></div>
+    </div>
+    <div>
+      <div class="logo-stage">
+        <span class="clearspace">${markSVG(b,52,primary,light.hex)}<span class="cs-tag" style="top:6px;left:8px">X</span><span class="cs-tag" style="bottom:6px;right:8px">X</span></span>
+      </div>
+      <div class="stage-cap"><span>Clear space</span><span class="mono">X on all sides</span></div>
+      <p class="ov-note" style="margin:6px 0 0">${esc(b.logo.clearspace)}</p>
+    </div>`;
+  page.appendChild(grid);
+
+  const sizes = el("div","section");
+  sizes.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">Minimum sizes</h3></div>
+    <div class="ov-grid">
+      <div class="card ov-card"><span class="eyebrow">Screen</span><div class="ov-val">${esc(b.logo.minDigital)}</div><span class="ov-note">Below this the mark's inner detail closes up at 1× density.</span></div>
+      <div class="card ov-card"><span class="eyebrow">Print</span><div class="ov-val">${esc(b.logo.minPrint)}</div><span class="ov-note">Measured across the full lockup, not the mark alone.</span></div>
+    </div>`;
+  page.appendChild(sizes);
+
+  const rulesSec = el("div","section");
+  rulesSec.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">Do</h3></div>`;
+  const dos = el("div","rules");
+  /* the single-ink example uses this brand's own darkest colour, not a fixed black */
+  const darkest = allColors(b).reduce((a,c) => lum(c.hex) < lum(a.hex) ? c : a).hex;
+  const doStages = [
+    `<div class="rule-stage" style="background:${light.hex}">${lockup(b,32,primary,light.hex)}</div>`,
+    `<div class="rule-stage" style="background:${primary}">${lockup(b,32,light.hex,primary)}</div>`,
+    `<div class="rule-stage" style="background:${light.hex}">${lockup(b,32,darkest,light.hex)}</div>`
+  ];
+  b.logo.dos.forEach((text,i) => {
+    const r = el("div","rule do");
+    r.innerHTML = `${doStages[i % doStages.length]}<div class="head">✓ Do</div><p>${esc(text)}</p>`;
+    dos.appendChild(r);
+  });
+  rulesSec.appendChild(dos);
+  page.appendChild(rulesSec);
+
+  const dontSec = el("div","section");
+  dontSec.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">Don't</h3></div>`;
+  const donts = el("div","rules");
+  const dontStages = [
+    `<div class="rule-stage" style="background:${light.hex}"><span style="display:block;transform:scaleX(1.6)">${lockup(b,32,primary,light.hex)}</span></div>`,
+    `<div class="rule-stage" style="background:${light.hex}">${lockup(b,32,"#B14FD8",light.hex)}</div>`,
+    `<div class="rule-stage" style="background:repeating-linear-gradient(45deg,#6b7280,#6b7280 8px,#9aa2ad 8px,#9aa2ad 16px)">${lockup(b,32,primary,light.hex)}</div>`
+  ];
+  b.logo.donts.forEach((text,i) => {
+    const r = el("div","rule dont");
+    r.innerHTML = `${dontStages[i % dontStages.length]}<div class="head">✕ Don't</div><p>${esc(text)}</p>`;
+    donts.appendChild(r);
+  });
+  dontSec.appendChild(donts);
+  page.appendChild(dontSec);
+}
+
+/* ---- assets ---- */
+function renderAssets(page, b){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Assets</h3><span class="count">${b.assets.length} files</span></div>
+    <p class="sec-sub">Everything extracted from the guide, plus the source PDF itself. In a live build these are signed download links that expire, so nothing leaks past the people you shared it with.</p>`;
+  page.appendChild(head);
+
+  const card = el("div","card");
+  b.assets.forEach(a => {
+    const row = el("div","file-row");
+    row.innerHTML = `<span class="file-ico">${esc(a.kind)}</span>
+      <span class="file-meta"><b>${esc(a.name)}</b><span>${esc(a.meta)}</span></span>
+      <button class="btn btn-ghost">Copy link</button>
+      <button class="btn">Download</button>`;
+    row.querySelectorAll("button")[0].onclick = () => copy(`https://spectra.design/d/${b.id}/${a.name}`, `link to ${a.name}`);
+    row.querySelectorAll("button")[1].onclick = () => toast("Mockup — no file attached", a.name, null, true);
+    card.appendChild(row);
+  });
+  page.appendChild(card);
+}
+
+/* ---- how it works tab ---- */
+function renderHow(page){
+  const s = el("div","section");
+  s.innerHTML = `<div class="sec-head"><h3>How a PDF becomes a page</h3></div>
+    <p class="sec-sub">Think of it as a returns desk at a warehouse. A box arrives, someone opens it, sorts what's inside onto the right shelves, writes a label, and only then does it go out on the floor.</p>
+    <div class="ov-grid" style="margin-top:18px">
+      <div class="card ov-card"><span class="eyebrow">1 · The box arrives</span><span class="ov-note">An admin drops the PDF. It goes straight into private storage and gets a job ticket. Nobody browsing the library can see it yet.</span></div>
+      <div class="card ov-card"><span class="eyebrow">2 · Someone opens it</span><span class="ov-note">A worker splits the PDF into pages, pulls the text layer, the embedded font names, the vector art and the fill colours already sitting in the file.</span></div>
+      <div class="card ov-card"><span class="eyebrow">3 · Sorted onto shelves</span><span class="ov-note">A model reads the messy result and answers one question per shelf: which colours are primary, what are the type roles, what are the logo rules. Each answer carries a confidence score.</span></div>
+      <div class="card ov-card"><span class="eyebrow">4 · A human signs it off</span><span class="ov-note">The brand sits in <b>Needs review</b> until an admin approves it. Machine guesses are labelled ⚙ so they never get mistaken for what the guide actually says.</span></div>
+      <div class="card ov-card"><span class="eyebrow">5 · Out on the floor</span><span class="ov-note">Published. The palette, the type specs and the logo rules are now values anyone can copy in one click.</span></div>
+      <div class="card ov-card"><span class="eyebrow">The rule that matters</span><span class="ov-note">Stated beats derived, always. A CMYK build read off the page is printed truth. One we calculated is a helpful guess, and it says so.</span></div>
+    </div>
+    <div class="scale-note" style="margin-top:22px"><b>Full write-up —</b> the architecture, the free-tier service choices and the Claude Code connectors that do the work are in <code>ARCHITECTURE.md</code>, next to this file in the repo.</div>`;
+  page.appendChild(s);
+}
+
+/* =============================================================
+   8. AUTH
+   ============================================================= */
+function openLogin(msg){
+  $("#loginModal").classList.add("open");
+  if (msg) toast(msg, null, null, true);
+  setTimeout(()=>$("#loginEmail").focus(), 60);
+}
+function closeAll(){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("open")); }
+function signIn(how){
+  state.admin = true; closeAll(); renderAll();
+  toast(how ? `Signed in with ${how}` : "Signed in as Studio Admin", "publish + edit unlocked");
+}
+function signOut(){ state.admin = false; renderAll(); toast("Signed out", "back to read-only"); }
+
+$("#loginForm").addEventListener("submit", e => { e.preventDefault(); signIn(); });
+document.querySelectorAll("[data-sso]").forEach(b => b.onclick = () => signIn(b.dataset.sso));
+
+/* =============================================================
+   9. UPLOAD + EXTRACTION
+   The demo derives a palette from the actual bytes of the file
+   you drop, so two different PDFs give two different brands.
+   A production build parses the page content instead.
+   ============================================================= */
+function openUpload(){
+  $("#uploadModal").classList.add("open");
+  drawDropStep();
+}
+function drawDropStep(){
+  $("#upSub").textContent = "Drop the brand guide PDF. Spectra reads it and proposes the palette, type stack and logo rules.";
+  const body = $("#upBody");
+  body.innerHTML = `<div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a PDF">
+      <div class="big">📄</div><b>Drop a brand guide PDF</b><span>or click to choose a file · up to 100 MB</span>
+    </div>
+    <p class="hint">Mockup — the file never leaves your browser. The palette below is derived from the bytes of whatever you drop, so every file produces a different brand. Production runs the pipeline in <code>ARCHITECTURE.md</code>.</p>
+    <input type="file" id="file" accept="application/pdf,.pdf" hidden>`;
+  $("#upFoot").innerHTML = `<span class="hint spacer" style="margin:0">Nothing publishes without a human approving it.</span>`;
+  const foot = $("#upFoot");
+  const cancel = el("button","btn","Cancel"); cancel.onclick = closeAll; foot.appendChild(cancel);
+  const skip = el("button","btn btn-primary","Use a sample guide");
+  skip.onclick = () => runExtraction(null);
+  foot.appendChild(skip);
+
+  const drop = $("#drop"), input = $("#file");
+  drop.onclick = () => input.click();
+  drop.onkeydown = e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); input.click(); } };
+  input.onchange = () => input.files[0] && runExtraction(input.files[0]);
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) runExtraction(f); });
+}
+
+const PIPELINE = [
+  ["Uploading to private storage", 520],
+  ["Splitting 1 PDF into pages", 620],
+  ["Reading text and embedded font names", 760],
+  ["Sampling fills and vector art for colour", 880],
+  ["Grouping colours into primary / secondary / neutral", 700],
+  ["Matching type roles to print and digital use", 640],
+  ["Finding logo lockups and usage rules", 580],
+  ["Scoring confidence per field", 420]
+];
+
+async function runExtraction(file){
+  $("#upSub").textContent = file ? `Reading ${file.name}` : "Reading a sample brand guide";
+  const body = $("#upBody");
+  body.innerHTML = `<div class="pipe" id="pipe"></div>`;
+  $("#upFoot").innerHTML = `<span class="hint spacer" style="margin:0">This runs as a background job in production — you can close the tab.</span>`;
+  const pipe = $("#pipe");
+  const rows = PIPELINE.map(([label]) => {
+    const r = el("div","step");
+    r.innerHTML = `<span class="dot">·</span><span class="t">${esc(label)}</span><span class="ms"></span>`;
+    pipe.appendChild(r); return r;
+  });
+
+  const seedPromise = file ? seedFromFile(file) : Promise.resolve({ seed: Math.floor(Math.random()*1e9), name:"Sample Studio", file:"sample-brand-guide.pdf", pages: 34, size:"9.6 MB" });
+
+  for (let i=0;i<rows.length;i++){
+    const r = rows[i];
+    r.className = "step run";
+    r.querySelector(".dot").outerHTML = `<span class="dot"><span class="spin"></span></span>`;
+    await wait(PIPELINE[i][1]);
+    r.className = "step done";
+    r.querySelector(".dot").outerHTML = `<span class="dot">✓</span>`;
+    r.querySelector(".ms").textContent = PIPELINE[i][1] + "ms";
+  }
+  drawReview(await seedPromise);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* Deterministic seed from the first 64 KB of the dropped file. */
+function seedFromFile(file){
+  return file.slice(0, 65536).arrayBuffer().then(buf => {
+    const bytes = new Uint8Array(buf);
+    let h = 0x811c9dc5;
+    for (let i=0;i<bytes.length;i++){ h ^= bytes[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+    const base = file.name.replace(/\.pdf$/i,"").replace(/[-_]+/g," ")
+      .replace(/\b(brand|guide|guidelines|identity|standards|book|final|draft|v?\d+(\.\d+)?)\b/gi,"")
+      .trim().replace(/\s+/g," ");
+    const name = (base || "Untitled Brand").replace(/\b\w/g, c => c.toUpperCase());
+    return { seed:h, name, file:file.name, pages: 12 + (h % 70), size:(file.size/1048576).toFixed(1) + " MB" };
+  }).catch(() => ({ seed:Date.now()>>>0, name:"Untitled Brand", file:file.name, pages:24, size:"—" }));
+}
+
+const TYPE_PAIRS = [
+  { display:"Ambit Bold", body:"Neue Haas Grotesk", dStack:'"Helvetica Neue",Helvetica,Arial,sans-serif', bStack:'"Helvetica Neue",Helvetica,Arial,sans-serif' },
+  { display:"Tiempos Headline", body:"Founders Grotesk", dStack:'Georgia,"Times New Roman",serif', bStack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif' },
+  { display:"Signifier", body:"ABC Diatype", dStack:'Georgia,"Times New Roman",serif', bStack:'"Segoe UI",Roboto,Helvetica,Arial,sans-serif' },
+  { display:"Right Grotesk Wide", body:"Basis Grotesque", dStack:'"Arial Black",Impact,sans-serif', bStack:'"Helvetica Neue",Helvetica,Arial,sans-serif' }
+];
+
+function proposeBrand(meta){
+  let s = meta.seed;
+  const rnd = () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296;
+  const h = Math.floor(rnd()*360);
+  const items = [
+    { name:"Primary",   hex:hsl2hex(h, 62 + rnd()*22, 30 + rnd()*14), conf: 88 + Math.floor(rnd()*11) },
+    { name:"Primary Dark", hex:hsl2hex(h, 40 + rnd()*20, 12 + rnd()*8), conf: 84 + Math.floor(rnd()*12) },
+    { name:"Accent",    hex:hsl2hex((h + 150 + rnd()*60) % 360, 68 + rnd()*20, 48 + rnd()*10), conf: 71 + Math.floor(rnd()*20) },
+    { name:"Support",   hex:hsl2hex((h + 40) % 360, 30 + rnd()*18, 76 + rnd()*10), conf: 66 + Math.floor(rnd()*22) },
+    { name:"Paper",     hex:hsl2hex(h, 14, 96), conf: 92 + Math.floor(rnd()*7) },
+    { name:"Ink",       hex:hsl2hex(h, 12, 13), conf: 94 + Math.floor(rnd()*5) }
+  ];
+  const pair = TYPE_PAIRS[Math.floor(rnd()*TYPE_PAIRS.length)];
+  const words = meta.name.split(" ");
+  const monogram = (words.length>1 ? words[0][0]+words[1][0] : meta.name.slice(0,2)).toUpperCase();
+  const conf = Math.round(items.reduce((n,i)=>n+i.conf,0)/items.length);
+
+  return {
+    id: slug(meta.name) + "-" + (meta.seed % 997),
+    name: meta.name, short: words[0], monogram, mark: meta.seed % 4, status:"review",
+    tagline:"Extracted from " + meta.file + ". Nothing here is approved yet.",
+    source:{ file:meta.file, pages:meta.pages, size:meta.size, extracted:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}), confidence:conf, owner:"Studio Admin" },
+    _proposed: items,
+    colors:[
+      { group:"Primary", items: items.slice(0,2).map(i => ({ name:i.name, hex:i.hex, note:"Detected on "+(1+(meta.seed%6))+" pages as a dominant fill." })) },
+      { group:"Secondary", items: items.slice(2,4).map(i => ({ name:i.name, hex:i.hex, note:"Appears in charts and supporting graphics." })) },
+      { group:"Neutrals", items: items.slice(4).map(i => ({ name:i.name, hex:i.hex, note:"Background and body copy." })) }
+    ],
+    type:{
+      digital:[
+        { role:"Display", family:pair.display, stack:pair.dStack, weight:700,
+          specs:{ Size:"42px", Leading:"46px", Tracking:"-0.02em", Source:"Embedded font table" },
+          sample:meta.name, usage:"Detected as the largest recurring style in the guide. Verify against the type pages." },
+        { role:"Body", family:pair.body, stack:pair.bStack, weight:400,
+          specs:{ Size:"16px", Leading:"25px", Tracking:"0", Source:"Embedded font table" },
+          sample:"Running text set in the body face named in the guide's font table.", usage:"Detected as the dominant body style. Confirm the licensed weights before publishing." }
+      ],
+      print:[
+        { role:"Display", family:pair.display, stack:pair.dStack, weight:700,
+          specs:{ Size:"32 pt", Leading:"36 pt", Tracking:"-8", Source:"Derived from page geometry" },
+          sample:meta.name, usage:"Point sizes derived from the page trim size — treat as a starting point, not a specification." },
+        { role:"Body", family:pair.body, stack:pair.bStack, weight:400,
+          specs:{ Size:"9.5 pt", Leading:"14 pt", Tracking:"0", Source:"Derived from page geometry" },
+          sample:"Running text set in the body face named in the guide's font table.", usage:"Confirm against the printed guide before sending anything to press." }
+      ]
+    },
+    logo:{
+      minPrint:"20 mm wide", minDigital:"88 px wide",
+      clearspace:"Detected as roughly half the mark height. Confirm with the guide.",
+      dos:["Primary colour on Paper","Reversed to Paper on Primary"],
+      donts:["Publish before the extraction is reviewed","Send derived CMYK values to a printer unchecked"]
+    },
+    assets:[
+      { name:slug(meta.name)+"-palette.ase", kind:"ASE", meta:"Adobe swatch exchange · "+items.length+" colours" },
+      { name:slug(meta.name)+"-tokens.json", kind:"JSON", meta:"Design tokens · W3C format" },
+      { name:meta.file, kind:"PDF", meta:"Source document · "+meta.pages+" pages · "+meta.size }
+    ]
+  };
+}
+
+function drawReview(meta){
+  const draft = proposeBrand(meta);
+  $("#upSub").textContent = "Check what Spectra found, then publish.";
+  const body = $("#upBody");
+  body.innerHTML = `<div class="eyebrow" style="margin-bottom:10px">Proposed palette · ${draft._proposed.length} colours</div>` +
+    draft._proposed.map(c => {
+      const tone = c.conf>=85 ? "good" : c.conf>=70 ? "warn" : "bad";
+      return `<div class="rev-row">
+        <i class="rev-sw" style="background:${c.hex}"></i>
+        <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${cmykStr(c.hex)} CMYK ⚙</span></span>
+        <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${c.conf}%</span>
+      </div>`;
+    }).join("") +
+    `<div class="eyebrow" style="margin:18px 0 10px">Proposed type pairing</div>
+     <div class="rev-row"><span class="rev-meta"><b style="font-family:${draft.type.digital[0].stack}">${esc(draft.type.digital[0].family)}</b><span>display · from the embedded font table</span></span></div>
+     <div class="rev-row"><span class="rev-meta"><b style="font-family:${draft.type.digital[1].stack}">${esc(draft.type.digital[1].family)}</b><span>body · from the embedded font table</span></span></div>
+     <p class="hint">Every value marked ⚙ was calculated, not read off the page. Publishing puts this brand in <b>Needs review</b> so it stays visible to admins only until it is approved.</p>`;
+
+  $("#upFoot").innerHTML = "";
+  const foot = $("#upFoot");
+  foot.appendChild(el("span","hint spacer",`Overall confidence ${draft.source.confidence}%`)).style.margin = "0";
+  const again = el("button","btn","Try another file"); again.onclick = drawDropStep; foot.appendChild(again);
+  const pub = el("button","btn btn-primary","Add to library");
+  pub.onclick = () => {
+    delete draft._proposed;
+    state.brands.push(draft);
+    closeAll(); go(draft.id);
+    toast("Added to the library", draft.name, allColors(draft)[0].hex);
+  };
+  foot.appendChild(pub);
+}
+
+/* =============================================================
+   10. WIRING
+   ============================================================= */
+function go(view){
+  state.view = view;
+  state.tab = "overview";
+  document.body.classList.remove("nav-open");
+  renderAll();
+}
+function renderAll(){
+  /* signing out while viewing an unapproved brand drops you back to the library */
+  const current = brandById(state.view);
+  if (current && !visibleBrands().includes(current)) state.view = "home";
+  renderRail(); renderSidebar(); renderHeader(); renderPage();
+}
+
+$("#search").addEventListener("input", e => { state.query = e.target.value; renderSidebar(); });
+$("#menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+$("#scrim").onclick  = () => document.body.classList.remove("nav-open");
+$("#themeBtn").onclick = () => {
+  const dark = state.theme ? state.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  state.theme = dark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", state.theme);
+  toast(`${state.theme === "dark" ? "Dark" : "Light"} theme`, null, null, false);
+};
+document.querySelectorAll(".overlay").forEach(o => o.addEventListener("mousedown", e => { if (e.target === o) closeAll(); }));
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeAll();
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){ e.preventDefault(); $("#search").focus(); $("#search").select(); }
+});
+
+renderAll();
+</script>
+</body>
+</html>

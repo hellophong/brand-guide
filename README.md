@@ -1,0 +1,48 @@
+# Spectra — digital brand guide library
+
+Upload a brand guide PDF. Get back a browsable library of the brand's colour palette, typography and logo rules — where every value copies to the clipboard on click.
+
+**[ARCHITECTURE.md](ARCHITECTURE.md)** explains how the whole thing works, in plain language.
+
+---
+
+## Run it
+
+```
+open index.html
+```
+
+That's it. One file, no build step, no dependencies, no network calls.
+
+## What's in the mockup
+
+A three-column layout modelled on a chat client: a brand rail, the library list, and the brand's content on the right. Login sits top-right and gates everything that writes.
+
+**Colour** — swatches grouped as primary, secondary and neutral. Click a swatch to copy its hex; click a single row to copy just that value. HEX, RGB, CMYK, HSL and Pantone for every colour, plus whole-palette export as CSS variables, SCSS, Tailwind config or W3C design tokens.
+
+**Typography** — print and digital as separate specifications of the same voice. Point sizes and leading for one, pixels and line-height for the other, each with guidance on when to use it.
+
+**Logo usage** — lockups on light and reversed grounds, clear space, minimum sizes for screen and print, and do/don't examples built from each brand's own palette.
+
+**Admin** — signing in unlocks uploads and editing. Drop a PDF and the extraction pipeline runs in front of you, then proposes values with a confidence score per field. Nothing publishes until a human approves it, and brands still in review are hidden from signed-out visitors.
+
+## Provenance
+
+Every value is labelled with where it came from:
+
+- 📄 **stated** — read off the page of the guide
+- ⚙ **derived** — calculated by Spectra
+
+Stated beats derived, always. A calculated CMYK build is a helpful guess, not a print specification, and it should never reach a printer unchecked.
+
+## What's real and what's simulated
+
+Real: clipboard copy in every format, live WCAG contrast ratios, hex conversion, palette export, search across brand names / colour names / hex values / typefaces, the admin gate, and light and dark themes.
+
+Simulated: the extraction. Dropping a PDF derives a palette from the file's actual bytes, so different files produce different brands — but it's a hash, not a parser. The pipeline animation shows the real stages in the real order. Downloads are inert and login accepts any credentials.
+
+The four brands included are fictional, used to show the interface with realistic content.
+
+## Where to take it next
+
+The build order that keeps each step useful on its own is at the end of [ARCHITECTURE.md](ARCHITECTURE.md). Short version: ship the page with a couple of brands typed in by hand before automating anything. A library nobody browses doesn't get better by filling itself faster.
