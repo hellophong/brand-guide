@@ -214,12 +214,15 @@ This is the one genuinely technical step, and it's the one to hand over entirely
 
 **What:** Tell the website where its back office is.
 
-1. In Supabase: **Project Settings** → **API**. Copy two things: the **Project URL** and the **anon public key**.
-2. In Cloudflare Pages: your project → **Settings** → **Environment variables**. Add both.
+1. In Supabase: **Settings** → **API Keys** → the **Publishable and secret API keys** tab. If there's no publishable key yet, click **Create new API keys**.
+2. Copy two things: the **Project URL** (Settings → API) and the **Publishable key** — it starts with `sb_publishable_`.
+3. In Cloudflare: your project → **Settings** → **Variables and Secrets**. Add both.
 
-**On that word "public":** the anon key is *designed* to be visible in your website's code. It's a doorbell, not a key — it lets the site knock, and the rules from Step 4 decide what it's allowed to do. This is why Step 4 matters so much.
+**Names changed recently.** Supabase is replacing the old `anon` and `service_role` keys with **publishable** and **secret** keys; the old pair still works but is being retired at the end of 2026. If your dashboard only shows a **Legacy API Keys** tab, use the **anon** key from there — same job.
 
-**Never** copy the **service_role** key into your website. That one is a master key that ignores every rule. It belongs only in server settings, never in anything a browser downloads.
+**On that word "publishable":** it's *designed* to be visible in your website's code. It's a doorbell, not a key — it lets the site knock, and the rules from Step 4 decide what it's allowed to do. This is exactly why Step 4 matters so much.
+
+**Never** put the **secret** key (`sb_secret_…`, formerly `service_role`) into your website. That one ignores every rule you wrote. It belongs only in server settings, never in anything a browser downloads.
 
 > **Ask Claude Code:** "Point the site at my Supabase project using the environment variables I've set in Cloudflare."
 
