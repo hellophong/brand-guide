@@ -4,7 +4,7 @@ How to turn the mockup into a real website where people log in and upload brand 
 
 Written for someone who is not a developer. You will not have to write code — but you will have to click through a few sign-up forms, copy some keys, and tell Claude Code what to build.
 
-**Time:** a focused afternoon for a working private site. **Cost to start:** $0, plus a few dollars of Claude API usage.
+**Time:** a focused afternoon for a working private site. **Cost to start:** $0, plus a few dollars of API usage for reading the PDFs.
 
 ---
 
@@ -27,7 +27,7 @@ Making it real means hiring five things:
 | The stockroom | **Supabase Storage** | A locked room out back. Only staff go in; customers get things handed to them. |
 | The ledger | **Supabase Database** | The index cards recording what's on every shelf and who put it there. |
 | The stockroom assistant | **Supabase Edge Function** | The person who actually opens the boxes, working out back where nobody watches. |
-| The expert you phone | **Claude API** | When a box is confusing, the assistant calls someone who reads it properly. |
+| The expert you phone | **OpenAI or Claude API** | When a box is confusing, the assistant calls someone who reads it properly. Either will do. |
 
 Three of those five are **the same company**. Supabase is the whole back office in one sign-up — door, stockroom, ledger and assistant. That's why it's the recommendation: one account instead of four.
 
@@ -41,7 +41,7 @@ Everything here has a free tier that genuinely covers a pilot.
 | --- | --- | --- | --- |
 | **Cloudflare Pages** | Hosts the shop floor | Unlimited bandwidth, 500 builds/month, 100k function requests/day, 5 custom domains | $5/mo (Workers Paid) if you outgrow requests |
 | **Supabase** | Door, stockroom, ledger, assistant | 500 MB database, 1 GB files, 50,000 monthly users, 2 projects | **Pro, $25/mo** |
-| **Claude API** | Reads the PDFs | Pay per use — no free tier, but pennies per guide | Same, scales with use |
+| **OpenAI or Claude API** | Reads the PDFs | Pay per use — no free tier, but pennies per guide | Same, scales with use |
 | **GitHub** | Keeps the master copy | Free for private repos | Free |
 | **Resend** *(optional)* | Sends login emails | 3,000 emails/month, 100/day | $20/mo |
 | **Sentry** *(optional)* | Tells you when something breaks | 5,000 errors/month | $26/mo |
@@ -76,7 +76,7 @@ Already connected in your workspace:
 - **Figma** — genuinely useful here. Once a palette is extracted, you can push it straight into a Figma variable collection so designers get it where they actually work.
 - **Google Drive** — installed but switched off in this chat. Worth turning on: brand guides usually already live in a shared Drive folder, so you can point Spectra at the folder instead of asking people to re-upload.
 
-**The Claude API is not a connector.** It's a key you paste into your server settings so your *website* can call Claude on its own, without you in the loop. Different thing, covered in Step 8.
+**A model API key is not a connector.** It's a key you paste into your server settings so your *website* can call the model on its own, without you in the loop. Different thing, covered in Step 8.
 
 ---
 
@@ -240,16 +240,30 @@ Two pieces:
 
 **a) The assistant.** A Supabase Edge Function that wakes up when a PDF lands, opens it, pulls out the text, the font names and the colour values already sitting inside the file. A PDF isn't a picture — it carries all of that in plain form. This step is free and gets you most of the palette and every typeface name.
 
-**b) The expert.** For anything the file doesn't state outright — *which* colours are primary, what each typeface is *for*, what the logo rules say — the assistant phones Claude.
+**b) The expert.** For anything the file doesn't state outright — *which* colours are primary, what each typeface is *for*, what the logo rules say — the assistant phones a language model.
 
-1. Go to **console.anthropic.com**, add a payment method, create an **API key**.
-2. Put it in Supabase → **Edge Functions** → **Secrets**. **Not** in your website code — this key costs you money every time it's used, and anything in your website can be read by anyone visiting it.
+**Either provider works.** This is the one place in the whole build that is swappable: the expert is a phone number, not a fixture. Use whichever you already have credits with.
+
+1. Create an **API key** — **platform.openai.com** or **console.anthropic.com**.
+2. Put it in Supabase → **Edge Functions** → **Secrets**. **Never** in `config.js` or anywhere else in the website. That file is public by design; this key is the opposite — it spends your money on every call, and anyone who finds it can spend it too.
 
 > **Ask Claude Code:** "Build the extraction Edge Function following the pipeline in ARCHITECTURE.md. Parse the PDF first with pdf.js and only send the leftovers to Claude. Return structured output with a confidence score per field, and write the results to the tables from Step 4."
 
-**Which model:** start with **Haiku 4.5** ($1 per million words in, $5 out). It's the cheapest and it's plenty for reading a structured document. Move up to Sonnet 5 only if the results disappoint.
+**Which model:** start at the cheapest tier either provider offers. Reading a structured document is not a hard job, and the expensive models are not better at it.
 
-**What a guide actually costs to read:** a 90-page brand guide is roughly 60,000 words of text. With Haiku that's somewhere around **10–20 cents**. A hundred brand guides is a takeaway coffee. Turn on **batch processing** (half price) if you're ever loading an archive in bulk.
+| Model | Per million tokens in / out |
+| --- | --- |
+| GPT-5.4 Nano | $0.20 / $1.25 |
+| GPT-5.4 Mini | $0.75 / $4.50 |
+| Claude Haiku 4.5 | $1.00 / $5.00 |
+
+Move up a tier only if the extraction disappoints — and judge that on real brand guides, not a hunch.
+
+**What a guide actually costs to read:** a 90-page brand guide is roughly 60,000 words. At nano prices that's **a few cents**; at Haiku prices, 10–20 cents. Either way a hundred guides costs less than lunch. Both providers offer batch processing at half price if you ever load an archive in bulk.
+
+**Ask for structured output.** Both providers can guarantee the reply matches a schema you define — OpenAI calls it Structured Outputs, Anthropic does it through tool definitions. Use it. It's the difference between reliably getting a confidence score on every field and writing code that guesses at prose.
+
+**Keep the call swappable.** Put the model call behind one small function with a plain input and output. Then changing provider later is a ten-line edit, not a rebuild — and you can run both over the same guide to see which reads it better.
 
 ---
 
@@ -319,3 +333,4 @@ Prices and limits checked August 2026. They change — check the pricing page be
 - [Cloudflare Pages free plan limits](https://www.devtoolreviews.com/reviews/cloudflare-pages-pricing-bandwidth-limits-2026)
 - [Cloudflare Pages Functions pricing](https://developers.cloudflare.com/pages/functions/pricing/)
 - [Claude API token pricing](https://benchlm.ai/anthropic/api-pricing)
+- [OpenAI API token pricing](https://benchlm.ai/openai/api-pricing)
