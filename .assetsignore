@@ -1,0 +1,8 @@
+# Files in this repo that should not be served as part of the website.
+# Same pattern syntax as .gitignore.
+wrangler.jsonc
+.assetsignore
+*.md
+**/.git
+**/node_modules
+**/.DS_Store

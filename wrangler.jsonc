@@ -1,0 +1,14 @@
+{
+  // Cloudflare deployment settings. The dashboard reads this when you import
+  // the repo, so there is nothing to fill in by hand.
+  //
+  // The name here MUST match the Worker name in the Cloudflare dashboard,
+  // or the build fails.
+  "name": "brand-guide",
+  "compatibility_date": "2026-08-09",
+
+  // There is no build step — index.html at the repo root is the whole site.
+  "assets": {
+    "directory": "."
+  }
+}

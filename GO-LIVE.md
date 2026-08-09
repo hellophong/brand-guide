@@ -98,13 +98,41 @@ Nothing to do — this is already set up.
 
 **What:** Get the site onto the real internet at a real address.
 
-1. Go to **dash.cloudflare.com** and make a free account.
-2. In the sidebar: **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Authorise GitHub, pick the **brand-guide** repository.
-4. Leave every build setting **blank** — there's nothing to build, it's one HTML file.
-5. Click **Save and Deploy**.
+**Use this link — it skips the menus entirely:**
 
-**You'll know it worked when:** you get a link like `brand-guide-a1b.pages.dev` and the mockup loads in your browser.
+👉 **[dash.cloudflare.com/?to=/:account/workers-and-pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages)**
+
+Cloudflare works out which account you mean and drops you on the right page. Sign up first if you haven't.
+
+Then:
+
+1. Click **Create**.
+2. Choose **Import a repository**.
+3. Authorise GitHub and pick **brand-guide**.
+4. Name it exactly **`brand-guide`** — it has to match the name in `wrangler.jsonc`, or the build fails.
+5. Leave the build settings alone. The repo already tells Cloudflare what to do.
+6. Click **Deploy**.
+
+**You'll know it worked when:** you get a link ending in `.workers.dev` and the mockup loads in your browser.
+
+#### Can't find "Workers & Pages" in the sidebar?
+
+You're not going mad — Cloudflare renamed it. Two likely reasons:
+
+- **It's now called "Compute (Workers)"** in the newer dashboard. Same place, new label. Pages and Workers were merged.
+- **You're inside a domain instead of your account.** If you've clicked into a specific website, the sidebar shows settings for *that domain* only. Click the Cloudflare logo (top left) to get back to account home first.
+
+The link above avoids both problems.
+
+#### "It made a Worker, not a Page — is that wrong?"
+
+No, that's correct now. Cloudflare merged the two products, and new static sites are deployed as **Workers with static assets**. For your purposes nothing changes: same free tier, same automatic deploys, same custom domains. Older tutorials (including the first version of this guide) say "Pages" because that's what it used to be called.
+
+#### If the Git import gives you trouble
+
+There's a no-Git fallback that takes two minutes: on the same page choose **Create** → **Upload assets**, then drag in a folder containing just `index.html`. It goes live immediately.
+
+The trade-off: it won't update itself when the code changes — you'd have to drag the file in again each time. Fine for showing someone today; switch to the Git route when you can.
 
 **What you now have:** a real shop on a real street. Anyone with the link can walk in. The stockroom is still painted on — logging in and uploading still resets on refresh — but the building is real, and it updates itself every time the code changes.
 
