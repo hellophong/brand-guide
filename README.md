@@ -35,6 +35,22 @@ Every value is labelled with where it came from:
 
 Stated beats derived, always. A calculated CMYK build is a helpful guess, not a print specification, and it should never reach a printer unchecked.
 
+## Typefaces
+
+The specimens render in the real faces they name. Seven families ship inside `index.html` as latin-subset woff2, embedded as data URIs so the page still needs no network:
+
+| Face | Used by |
+| --- | --- |
+| Fraunces | Verdant display |
+| Public Sans | Verdant headings and body |
+| Source Serif 4 | Helio display |
+| Inter | Helio product and body, Kite body |
+| Atkinson Hyperlegible | Northwind throughout — it was drawn for low-vision readers, which is the brief |
+| Archivo Black | Kite display |
+| IBM Plex Mono | Numerals and data |
+
+All seven are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org), which permits embedding. They stand in for the retail faces a real guide would specify — those are licensed per-seat and cannot be bundled. A production build serves the client's own licensed webfonts the same way, from its asset bucket.
+
 ## What's real and what's simulated
 
 Real: clipboard copy in every format, live WCAG contrast ratios, hex conversion, palette export, search across brand names / colour names / hex values / typefaces, the admin gate, and light and dark themes.

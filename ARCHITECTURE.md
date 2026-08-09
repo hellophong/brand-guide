@@ -139,7 +139,7 @@ Do not start at step 4. The extraction is the interesting problem and the wrong 
 
 `index.html` runs standalone in a browser. No build step, no dependencies, no network calls.
 
-**Real in the mockup:** clipboard copy in every format; WCAG contrast ratios calculated live; hex → RGB/CMYK/HSL conversion; palette export as CSS variables, SCSS, Tailwind config and W3C design tokens; search across brand names, colour names, hex values and typefaces; the admin gate, including review-status brands being genuinely hidden from guests; light and dark themes.
+**Real in the mockup:** clipboard copy in every format; WCAG contrast ratios calculated live; hex → RGB/CMYK/HSL conversion; palette export as CSS variables, SCSS, Tailwind config and W3C design tokens; search across brand names, colour names, hex values and typefaces; the admin gate, including review-status brands being genuinely hidden from guests; light and dark themes; and the type specimens, which render in the real embedded faces they name rather than a fallback.
 
 **Simulated:** the extraction. Dropping a PDF derives a palette from the file's actual bytes, so different files produce different brands — but it is a hash, not a parser. The pipeline animation shows the real stages in the real order with plausible timings. Downloads are inert. Login accepts any credentials.
 
