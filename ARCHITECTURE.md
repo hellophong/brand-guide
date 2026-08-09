@@ -145,4 +145,4 @@ Asset uploads are real too, up to a point: files you add on the Assets tab are h
 
 **Simulated:** the extraction. Dropping a PDF derives a palette from the file's actual bytes, so different files produce different brands — but it is a hash, not a parser. The pipeline animation shows the real stages in the real order with plausible timings. Downloads are inert. Login accepts any credentials.
 
-**Not there yet:** version history when a brand guide is reissued, multi-tenant separation if you host this for several clients, and an audit trail of who approved what.
+**Not there yet:** version history when a brand guide is reissued, multi-tenant separation if you host this for several clients, and persistence — the admin portal keeps a real audit trail of who did what, but it lives in memory and resets on reload.

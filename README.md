@@ -26,7 +26,15 @@ A three-column layout modelled on a chat client: a brand rail, the library list,
 
 **Assets** — everything extracted from the guide, plus the source PDF. Admins can add brand files here — logos, icons, packaging artwork — in SVG, EPS, AI, PDF, PNG, JPG and more. Artwork previews itself in the list, and uploaded files really do download.
 
-**Admin** — signing in unlocks uploads and editing. Drop a PDF and the extraction pipeline runs in front of you, then proposes values with a confidence score per field. Nothing publishes until a human approves it, and brands still in review are hidden from signed-out visitors.
+**Admin portal** — signing in adds a portal to the sidebar with five tabs:
+
+- **Upload** — drop one or more brand guide PDFs. Each becomes a background job, so you can leave the page while they run.
+- **Processing** — live progress per job through the extraction pipeline.
+- **Needs review** — what the extraction proposes, with a confidence score on every colour and a flag on anything below 75%. Approve and publish, keep as a draft, or discard.
+- **Brands** — the whole library as a table. Publish and unpublish in place.
+- **Activity** — the audit trail: who uploaded, approved, published or unpublished what, and when.
+
+Nothing publishes until a human approves it, and brands still in review are hidden from signed-out visitors.
 
 ## Provenance
 

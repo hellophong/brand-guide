@@ -362,6 +362,50 @@ button{cursor:pointer;border:none;background:none}
 .bc-text b{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em}
 .bc-text span{font-size:12px;color:var(--text-faint)}
 
+/* ---------- admin portal ---------- */
+.tab-count{
+  display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;
+  border-radius:9px;background:var(--accent);color:var(--on-accent);
+  font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;
+}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px}
+.stat{padding:14px 16px;border-radius:var(--radius);background:var(--raised);border:1px solid var(--line-soft)}
+.stat .n{font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .l{font-size:11.5px;color:var(--text-faint);font-weight:600;margin-top:2px}
+.job{
+  padding:16px;border-radius:var(--radius);background:var(--raised);
+  border:1px solid var(--line-soft);margin-bottom:12px;
+}
+.job-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar{height:5px;border-radius:3px;background:var(--raised-2);overflow:hidden;margin:14px 0 9px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .45s ease}
+.job-stage{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text-dim)}
+.rev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px;margin-top:16px}
+.flag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--warn-soft);color:var(--warn)}
+.empty{
+  padding:44px 20px;text-align:center;color:var(--text-faint);font-size:13.5px;
+  border:1px dashed var(--line);border-radius:var(--radius);
+}
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--line-soft);background:var(--raised)}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap}
+.tbl th{
+  text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--text-faint);font-weight:800;padding:12px 14px;
+}
+.tbl td{padding:11px 14px;border-top:1px solid var(--line-soft);vertical-align:middle}
+.tbl tbody tr:hover td{background:var(--raised-2)}
+.tbl .name{font-weight:600}
+.tbl .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-dim)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+.log li:last-child{border-bottom:none}
+.log time{
+  flex:0 0 84px;color:var(--text-faint);font-size:12px;
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+}
+.log .who{font-weight:600}
+
 /* ---------- modal ---------- */
 .overlay{
   position:fixed;inset:0;background:rgba(8,9,12,.72);backdrop-filter:blur(2px);
@@ -525,18 +569,6 @@ button{cursor:pointer;border:none;background:none}
       </form>
       <p class="hint">Mockup — any credentials sign you in as <code>Admin</code>. Real builds swap this for the identity provider described in ARCHITECTURE.md.</p>
     </div>
-  </div>
-</div>
-
-<!-- add brand -->
-<div class="overlay" id="uploadModal" role="dialog" aria-modal="true" aria-labelledby="upTitle">
-  <div class="modal wide">
-    <div class="modal-head left">
-      <h3 id="upTitle">Add a brand</h3>
-      <p id="upSub">Drop the brand guide PDF. Spectra reads it and proposes the palette, type stack and logo rules.</p>
-    </div>
-    <div class="modal-body" id="upBody"></div>
-    <div class="modal-foot" id="upFoot"></div>
   </div>
 </div>
 
@@ -832,6 +864,8 @@ const state = {
   tab: "all",
   typeMode: "digital",
   admin: false,
+  jobs: [],        // extraction jobs, running or awaiting review
+  activity: [],    // audit trail
   query: "",
   theme: null            // null = follow the OS
 };
@@ -927,6 +961,14 @@ function renderSidebar(){
   home.onclick = () => go("home");
   list.appendChild(home);
 
+  if (state.admin){
+    const n = adminAttention();
+    const portal = el("button","sb-item" + (state.view==="admin" ? " active":""),
+      `<span class="sb-name">Admin portal</span>${n ? `<span class="sb-pip pip-queue">${n}</span>` : ""}`);
+    portal.onclick = () => go("admin");
+    list.appendChild(portal);
+  }
+
   if (published.length){
     list.appendChild(el("div","sb-cat",`<span>Published — ${published.length}</span>`));
     published.forEach(b => list.appendChild(row(b)));
@@ -956,15 +998,20 @@ function renderHeader(){
   $("#authSlot").innerHTML = state.admin
     ? `<button class="btn btn-primary" id="addBtn">＋ Add brand</button>`
     : `<button class="btn btn-primary" id="loginBtn">Log in</button>`;
-  const ab = $("#addBtn");   if (ab) ab.onclick = openUpload;
+  const ab = $("#addBtn");   if (ab) ab.onclick = () => go("admin","upload");
   const lb = $("#loginBtn"); if (lb) lb.onclick = () => openLogin();
 
   const tabs = $("#tabs"); tabs.innerHTML = "";
-  const defs = b
+  const pill = n => n ? ` <span class="tab-count">${n}</span>` : "";
+  const defs = state.view === "admin"
+    ? [["upload","Upload"],["queue","Processing" + pill(jobsRunning())],
+       ["review","Needs review" + pill(jobsToReview())],["brands","Brands"],["activity","Activity"]]
+    : b
     ? [["color","Colour"],["type","Typography"],["logo","Logo"],["assets","Assets"]]
     : [["all","All brands"],["how","How extraction works"]];
   defs.forEach(([id,label]) => {
-    const t = el("button","tab" + (state.tab===id ? " active":""), esc(label));
+    /* labels are literals defined above, so the count pill can carry markup */
+    const t = el("button","tab" + (state.tab===id ? " active":""), label);
     t.onclick = () => { state.tab = id; renderHeader(); renderPage(); };
     tabs.appendChild(t);
   });
@@ -973,9 +1020,12 @@ function renderHeader(){
 /* =============================================================
    7. RENDER — page bodies
    ============================================================= */
-function renderPage(){
-  const page = $("#page"); page.innerHTML = "";
-  $("#scroll").scrollTop = 0;
+function renderPage(keepScroll){
+  const page = $("#page");
+  const y = $("#scroll").scrollTop;
+  page.innerHTML = "";
+  $("#scroll").scrollTop = keepScroll ? y : 0;
+  if (state.view === "admin") return renderAdmin(page);
   const b = brandById(state.view);
   if (!b) return state.tab==="how" ? renderHow(page) : renderHome(page);
 
@@ -1022,7 +1072,7 @@ function renderHome(page){
   cta.innerHTML = `<div class="sec-head"><h3>Add one</h3></div>
     <p class="sec-sub">Admins can drop a new brand guide PDF straight into the library. The extraction runs in front of you, and nothing is published until a human approves it.</p>`;
   const btn = el("button","btn btn-primary btn-lg", state.admin ? "＋ Add a brand guide" : "Log in to add a brand");
-  btn.onclick = () => state.admin ? openUpload() : openLogin();
+  btn.onclick = () => state.admin ? go("admin","upload") : openLogin();
   cta.appendChild(btn);
   page.appendChild(cta);
 }
@@ -1365,34 +1415,6 @@ document.querySelectorAll("[data-sso]").forEach(b => b.onclick = () => signIn(b.
    you drop, so two different PDFs give two different brands.
    A production build parses the page content instead.
    ============================================================= */
-function openUpload(){
-  $("#uploadModal").classList.add("open");
-  drawDropStep();
-}
-function drawDropStep(){
-  $("#upSub").textContent = "Drop the brand guide PDF. Spectra reads it and proposes the palette, type stack and logo rules.";
-  const body = $("#upBody");
-  body.innerHTML = `<div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a PDF">
-      <div class="big">📄</div><b>Drop a brand guide PDF</b><span>or click to choose a file · up to 100 MB</span>
-    </div>
-    <p class="hint">Mockup — the file never leaves your browser. The palette below is derived from the bytes of whatever you drop, so every file produces a different brand. Production runs the pipeline in <code>ARCHITECTURE.md</code>.</p>
-    <input type="file" id="file" accept="application/pdf,.pdf" hidden>`;
-  $("#upFoot").innerHTML = `<span class="hint spacer" style="margin:0">Nothing publishes without a human approving it.</span>`;
-  const foot = $("#upFoot");
-  const cancel = el("button","btn","Cancel"); cancel.onclick = closeAll; foot.appendChild(cancel);
-  const skip = el("button","btn btn-primary","Use a sample guide");
-  skip.onclick = () => runExtraction(null);
-  foot.appendChild(skip);
-
-  const drop = $("#drop"), input = $("#file");
-  drop.onclick = () => input.click();
-  drop.onkeydown = e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); input.click(); } };
-  input.onchange = () => input.files[0] && runExtraction(input.files[0]);
-  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
-  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) runExtraction(f); });
-}
-
 const PIPELINE = [
   ["Uploading to private storage", 520],
   ["Splitting 1 PDF into pages", 620],
@@ -1404,32 +1426,71 @@ const PIPELINE = [
   ["Scoring confidence per field", 420]
 ];
 
-async function runExtraction(file){
-  $("#upSub").textContent = file ? `Reading ${file.name}` : "Reading a sample brand guide";
-  const body = $("#upBody");
-  body.innerHTML = `<div class="pipe" id="pipe"></div>`;
-  $("#upFoot").innerHTML = `<span class="hint spacer" style="margin:0">This runs as a background job in production — you can close the tab.</span>`;
-  const pipe = $("#pipe");
-  const rows = PIPELINE.map(([label]) => {
-    const r = el("div","step");
-    r.innerHTML = `<span class="dot">·</span><span class="t">${esc(label)}</span><span class="ms"></span>`;
-    pipe.appendChild(r); return r;
-  });
-
-  const seedPromise = file ? seedFromFile(file) : Promise.resolve({ seed: Math.floor(Math.random()*1e9), name:"Sample Studio", file:"sample-brand-guide.pdf", pages: 34, size:"9.6 MB" });
-
-  for (let i=0;i<rows.length;i++){
-    const r = rows[i];
-    r.className = "step run";
-    r.querySelector(".dot").outerHTML = `<span class="dot"><span class="spin"></span></span>`;
-    await wait(PIPELINE[i][1]);
-    r.className = "step done";
-    r.querySelector(".dot").outerHTML = `<span class="dot">✓</span>`;
-    r.querySelector(".ms").textContent = PIPELINE[i][1] + "ms";
-  }
-  drawReview(await seedPromise);
-}
 const wait = ms => new Promise(r => setTimeout(r, ms));
+let jobSeq = 0;
+
+/* Extraction is a background job: submitting returns immediately and the
+   queue keeps running whether or not anyone is watching the portal. */
+async function submitJob(file){
+  const job = {
+    id: "job-" + (++jobSeq),
+    name: file ? file.name : "sample-brand-guide.pdf",
+    size: file ? fileSize(file.size) : "9.6 MB",
+    stage: 0, status: "running", started: Date.now(), file
+  };
+  state.jobs.unshift(job);
+  logActivity("Uploaded", job.name);
+  toast("Extraction queued", job.name);
+  if (state.view === "admin") renderAll();
+
+  const seedPromise = file ? seedFromFile(file) : Promise.resolve(
+    { seed: Math.floor(Math.random()*1e9), name:"Sample Studio", file:job.name, pages:34, size:job.size });
+
+  for (let i = 0; i < PIPELINE.length; i++){
+    job.stage = i;
+    paintJob(job);
+    await wait(PIPELINE[i][1]);
+  }
+  job.draft = proposeBrand(await seedPromise);
+  job.status = "review";
+  job.stage = PIPELINE.length;
+  job.finished = Date.now();
+  logActivity("Extraction finished", `${job.name} · ${job.draft.source.confidence}% confidence`);
+  if (state.view === "admin") renderAll(true);
+  else toast("Ready for review", job.draft.name);
+}
+
+/* Update one card in place — a full re-render on every stage would fight
+   the admin's scroll position. */
+function paintJob(job){
+  const node = document.querySelector(`[data-job="${job.id}"]`);
+  if (node) node.innerHTML = jobCardHTML(job);
+}
+
+function jobCardHTML(job){
+  const total = PIPELINE.length;
+  const pct = Math.round((job.stage / total) * 100);
+  const done = job.status === "review";
+  const label = done ? "Extraction complete" : PIPELINE[job.stage][0];
+  return `<div class="job-head">
+      <span class="file-ico">PDF</span>
+      <span class="file-meta"><b>${esc(job.name)}</b><span>${esc(job.size)} · submitted ${timeAgo(job.started)}</span></span>
+      <span class="chip ${done ? "good" : ""}">${done ? "Awaiting review" : "Processing"}</span>
+    </div>
+    <div class="bar"><i style="width:${done ? 100 : pct}%"></i></div>
+    <div class="job-stage">${done ? "✓" : '<span class="spin"></span>'}
+      <span>${esc(label)}</span>
+      <span class="ms mono" style="margin-left:auto">${done ? total + "/" + total : job.stage + "/" + total} steps</span>
+    </div>`;
+}
+
+const timeAgo = t => {
+  const s = Math.round((Date.now() - t)/1000);
+  return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s/60)}m ago` : `${Math.round(s/3600)}h ago`;
+};
+function logActivity(action, detail){
+  state.activity.unshift({ t: Date.now(), who: state.admin ? "Studio Admin" : "Guest", action, detail });
+}
 
 /* Deterministic seed from the first 64 KB of the dropped file. */
 function seedFromFile(file){
@@ -1512,52 +1573,245 @@ function proposeBrand(meta){
   };
 }
 
-function drawReview(meta){
-  const draft = proposeBrand(meta);
-  $("#upSub").textContent = "Check what Spectra found, then publish.";
-  const body = $("#upBody");
-  body.innerHTML = `<div class="eyebrow" style="margin-bottom:10px">Proposed palette · ${draft._proposed.length} colours</div>` +
-    draft._proposed.map(c => {
-      const tone = c.conf>=85 ? "good" : c.conf>=70 ? "warn" : "bad";
-      return `<div class="rev-row">
-        <i class="rev-sw" style="background:${c.hex}"></i>
-        <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${cmykStr(c.hex)} CMYK ⚙</span></span>
-        <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${c.conf}%</span>
-      </div>`;
-    }).join("") +
-    `<div class="eyebrow" style="margin:18px 0 10px">Proposed type pairing</div>
-     <div class="rev-row"><span class="rev-meta"><b style="font-family:${draft.type.digital[0].stack}">${esc(draft.type.digital[0].family)}</b><span>display · from the embedded font table</span></span></div>
-     <div class="rev-row"><span class="rev-meta"><b style="font-family:${draft.type.digital[1].stack}">${esc(draft.type.digital[1].family)}</b><span>body · from the embedded font table</span></span></div>
-     <p class="hint">Every value marked ⚙ was calculated, not read off the page. Publishing puts this brand in <b>Needs review</b> so it stays visible to admins only until it is approved.</p>`;
+/* =============================================================
+   9b. ADMIN PORTAL
+   ============================================================= */
+const jobsRunning = () => state.jobs.filter(j => j.status === "running").length;
+const jobsToReview = () => state.jobs.filter(j => j.status === "review").length;
+const adminAttention = () => jobsRunning() + jobsToReview();
 
-  $("#upFoot").innerHTML = "";
-  const foot = $("#upFoot");
-  foot.appendChild(el("span","hint spacer",`Overall confidence ${draft.source.confidence}%`)).style.margin = "0";
-  const again = el("button","btn","Try another file"); again.onclick = drawDropStep; foot.appendChild(again);
-  const pub = el("button","btn btn-primary","Add to library");
-  pub.onclick = () => {
-    delete draft._proposed;
-    state.brands.push(draft);
-    closeAll(); go(draft.id);
-    toast("Added to the library", draft.name, allColors(draft)[0].hex);
+function renderAdmin(page){
+  const published = state.brands.filter(b => b.status === "published").length;
+  const drafts = state.brands.length - published;
+
+  const stats = el("div","stat-row");
+  stats.innerHTML = [
+    ["Brands", state.brands.length, ""],
+    ["Published", published, "good"],
+    ["Drafts", drafts, drafts ? "warn" : ""],
+    ["Processing", jobsRunning(), jobsRunning() ? "accent" : ""],
+    ["Awaiting review", jobsToReview(), jobsToReview() ? "warn" : ""]
+  ].map(([l,n,tone]) => `<div class="stat"><div class="n"${tone?` style="color:var(--${tone})"`:""}>${n}</div><div class="l">${l}</div></div>`).join("");
+  page.appendChild(stats);
+
+  ({ upload:adminUpload, queue:adminQueue, review:adminReview, brands:adminBrands, activity:adminActivity }[state.tab] || adminUpload)(page);
+}
+
+function adminUpload(page){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Add a brand guide</h3></div>
+    <p class="sec-sub">Drop one or more brand guide PDFs. Each becomes a background job — you can leave this page while they run, and nothing reaches the library until you approve it.</p>`;
+  page.appendChild(head);
+
+  const drop = el("div","drop");
+  drop.tabIndex = 0; drop.setAttribute("role","button"); drop.setAttribute("aria-label","Choose brand guide PDFs");
+  drop.innerHTML = `<div class="big">📄</div><b>Drop brand guide PDFs</b>
+    <span>or click to choose · PDF only · up to 100 MB each</span>`;
+  const input = el("input"); input.type = "file"; input.accept = "application/pdf,.pdf";
+  input.multiple = true; input.hidden = true;
+
+  const submit = files => {
+    const list = [...(files||[])].filter(f => /\.pdf$/i.test(f.name));
+    const bad  = [...(files||[])].length - list.length;
+    list.forEach(submitJob);
+    if (bad) toast(`Skipped ${bad} non-PDF file${bad>1?"s":""}`, "brand guides must be PDFs", null, true);
+    if (list.length){ state.tab = "queue"; renderAll(); }
   };
-  foot.appendChild(pub);
+  drop.onclick = () => input.click();
+  drop.onkeydown = e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); input.click(); } };
+  input.onchange = () => { submit(input.files); input.value = ""; };
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => submit(e.dataTransfer.files));
+  page.appendChild(drop);
+  page.appendChild(input);
+
+  const row = el("div","meta-row"); row.style.marginTop = "14px";
+  const sample = el("button","btn","Run a sample guide instead");
+  sample.onclick = () => { submitJob(null); state.tab = "queue"; renderAll(); };
+  row.appendChild(sample);
+  row.appendChild(el("span","hint",`No file leaves your browser in this mockup.`));
+  page.appendChild(row);
+
+  const steps = el("div","section");
+  steps.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">What happens after you drop it</h3></div>
+    <div class="ov-grid">
+      <div class="card ov-card"><span class="eyebrow">1 · Stored</span><span class="ov-note">The PDF goes to private storage and gets a job ticket. Nobody browsing the library can see it.</span></div>
+      <div class="card ov-card"><span class="eyebrow">2 · Read</span><span class="ov-note">A worker pulls the text layer, embedded font table and vector fills — the values the file already knows.</span></div>
+      <div class="card ov-card"><span class="eyebrow">3 · Sorted</span><span class="ov-note">A model groups colours, matches type roles and finds the logo rules, scoring its confidence per field.</span></div>
+      <div class="card ov-card"><span class="eyebrow">4 · Your call</span><span class="ov-note">It lands in Needs review. You publish it, keep it as a draft, or discard it.</span></div>
+    </div>`;
+  page.appendChild(steps);
+}
+
+function adminQueue(page){
+  const jobs = state.jobs.filter(j => j.status === "running");
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Processing</h3><span class="count">${jobs.length} running</span></div>
+    <p class="sec-sub">Each job runs the same pipeline. Timings here are illustrative; a real 90-page guide takes a few minutes.</p>`;
+  page.appendChild(head);
+
+  if (!jobs.length){
+    page.appendChild(el("div","empty","Nothing is processing. Drop a PDF on the Upload tab to start a job."));
+    return;
+  }
+  jobs.forEach(j => {
+    const card = el("div","job");
+    card.setAttribute("data-job", j.id);
+    card.innerHTML = jobCardHTML(j);
+    page.appendChild(card);
+  });
+}
+
+function adminReview(page){
+  const jobs = state.jobs.filter(j => j.status === "review");
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Needs review</h3><span class="count">${jobs.length} waiting</span></div>
+    <p class="sec-sub">What the extraction proposes, and how sure it is. Everything marked ⚙ was calculated rather than read off the page — check those before anything goes to a printer.</p>`;
+  page.appendChild(head);
+
+  if (!jobs.length){
+    page.appendChild(el("div","empty","Nothing waiting. Finished extractions land here for approval."));
+    return;
+  }
+
+  jobs.forEach(job => {
+    const d = job.draft;
+    const low = d._proposed.filter(c => c.conf < 75).length;
+    const card = el("div","job");
+    card.innerHTML = `<div class="job-head">
+        <span class="file-ico">PDF</span>
+        <span class="file-meta"><b>${esc(d.name)}</b><span>${esc(job.name)} · ${d.source.pages} pages · extracted ${timeAgo(job.finished)}</span></span>
+        <span class="chip ${d.source.confidence>=90?"good":d.source.confidence>=80?"warn":"bad"}">${d.source.confidence}% confidence</span>
+        ${low ? `<span class="flag">${low} field${low>1?"s":""} to check</span>` : ""}
+      </div>
+      <div class="rev-grid">
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">Proposed palette · ${d._proposed.length}</div>
+          ${d._proposed.map(c => {
+            const tone = c.conf>=85 ? "good" : c.conf>=70 ? "warn" : "bad";
+            return `<div class="rev-row">
+              <i class="rev-sw" style="background:${c.hex}"></i>
+              <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${cmykStr(c.hex)} CMYK ⚙</span></span>
+              <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${c.conf}%</span>
+            </div>`;
+          }).join("")}
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:8px">Proposed type</div>
+          <div class="rev-row"><span class="rev-meta"><b style="font-family:${d.type.digital[0].stack}">${esc(d.type.digital[0].family)}</b><span>display · from the embedded font table</span></span></div>
+          <div class="rev-row"><span class="rev-meta"><b style="font-family:${d.type.digital[1].stack}">${esc(d.type.digital[1].family)}</b><span>body · from the embedded font table</span></span></div>
+          <div class="eyebrow" style="margin:16px 0 8px">Proposed logo rules</div>
+          <div class="rev-row"><span class="rev-meta"><b>${esc(d.logo.minDigital)} / ${esc(d.logo.minPrint)}</b><span>minimum size, screen and print ⚙</span></span></div>
+        </div>
+      </div>`;
+
+    const acts = el("div","meta-row"); acts.style.marginTop = "14px";
+    const pub = el("button","btn btn-primary","Approve and publish");
+    pub.onclick = () => finishJob(job, "published");
+    const draft = el("button","btn","Keep as draft");
+    draft.onclick = () => finishJob(job, "review");
+    const kill = el("button","btn btn-ghost","Discard");
+    kill.onclick = () => {
+      state.jobs = state.jobs.filter(j => j !== job);
+      logActivity("Discarded extraction", d.name);
+      toast("Discarded", d.name, null, true);
+      renderAll(true);
+    };
+    acts.append(pub, draft, kill);
+    card.appendChild(acts);
+    page.appendChild(card);
+  });
+}
+
+function finishJob(job, status){
+  const d = job.draft;
+  delete d._proposed;
+  d.status = status;
+  state.brands.push(d);
+  state.jobs = state.jobs.filter(j => j !== job);
+  logActivity(status === "published" ? "Published" : "Saved as draft", d.name);
+  toast(status === "published" ? "Published to the library" : "Saved as a draft", d.name, allColors(d)[0].hex);
+  go(d.id);
+}
+
+function adminBrands(page){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Brands</h3><span class="count">${state.brands.length}</span></div>
+    <p class="sec-sub">Everything in the library. Unpublishing hides a brand from everyone but admins — useful when a guide is being reissued.</p>`;
+  page.appendChild(head);
+
+  const wrap = el("div","tbl-wrap");
+  const tbl = el("table","tbl");
+  tbl.innerHTML = `<thead><tr>
+      <th>Brand</th><th>Status</th><th>Colours</th><th>Type</th><th>Files</th><th>Owner</th><th>Confidence</th><th></th>
+    </tr></thead>`;
+  const body = el("tbody");
+  state.brands.forEach(b => {
+    const tr = el("tr");
+    tr.innerHTML = `<td class="name">${esc(b.name)}</td>
+      <td><span class="sb-pip ${b.status==="published"?"pip-new":"pip-review"}">${b.status==="published"?"Published":"Draft"}</span></td>
+      <td class="mono">${allColors(b).length}</td>
+      <td class="mono">${b.type.digital.length + b.type.print.length}</td>
+      <td class="mono">${b.assets.length}</td>
+      <td>${esc(b.source.owner)}</td>
+      <td class="mono">${b.source.confidence}%</td>
+      <td class="row-actions"></td>`;
+    const actions = tr.querySelector(".row-actions");
+    const open = el("button","btn btn-ghost","Open");
+    open.onclick = () => go(b.id);
+    const toggle = el("button","btn", b.status === "published" ? "Unpublish" : "Publish");
+    toggle.onclick = () => {
+      b.status = b.status === "published" ? "review" : "published";
+      logActivity(b.status === "published" ? "Published" : "Unpublished", b.name);
+      toast(b.status === "published" ? "Published" : "Unpublished", b.name);
+      renderAll(true);
+    };
+    actions.append(open, toggle);
+    body.appendChild(tr);
+  });
+  tbl.appendChild(body);
+  wrap.appendChild(tbl);
+  page.appendChild(wrap);
+}
+
+function adminActivity(page){
+  const head = el("div","section");
+  head.innerHTML = `<div class="sec-head"><h3>Activity</h3><span class="count">${state.activity.length} events</span></div>
+    <p class="sec-sub">Who did what, and when. In a real build this is the audit trail — it answers "who approved this palette?" months later.</p>`;
+  page.appendChild(head);
+
+  if (!state.activity.length){
+    page.appendChild(el("div","empty","Nothing yet. Uploads, approvals and publishes are recorded here."));
+    return;
+  }
+  const card = el("div","card"); card.style.padding = "6px 16px";
+  const list = el("ul","log");
+  state.activity.forEach(a => {
+    const li = el("li");
+    li.innerHTML = `<time>${new Date(a.t).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"})}</time>
+      <span><span class="who">${esc(a.who)}</span> ${esc(a.action.toLowerCase())} — ${esc(a.detail)}</span>`;
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+  page.appendChild(card);
 }
 
 /* =============================================================
    10. WIRING
    ============================================================= */
-function go(view){
+function go(view, tab){
   state.view = view;
-  state.tab = view === "home" ? "all" : "color";   /* a brand opens on its colour */
+  state.tab = tab || (view === "home" ? "all" : view === "admin" ? "upload" : "color");
   document.body.classList.remove("nav-open");
   renderAll();
 }
-function renderAll(){
-  /* signing out while viewing an unapproved brand drops you back to the library */
+function renderAll(keepScroll){
+  /* signing out while viewing an unapproved brand — or the portal — drops you back */
   const current = brandById(state.view);
   if (current && !visibleBrands().includes(current)){ state.view = "home"; state.tab = "all"; }
-  renderSidebar(); renderHeader(); renderPage();
+  if (state.view === "admin" && !state.admin){ state.view = "home"; state.tab = "all"; }
+  renderSidebar(); renderHeader(); renderPage(keepScroll);
 }
 
 $("#search").addEventListener("input", e => { state.query = e.target.value; renderSidebar(); });
