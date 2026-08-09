@@ -3,6 +3,7 @@
 Upload a brand guide PDF. Get back a browsable library of the brand's colour palette, typography and logo rules — where every value copies to the clipboard on click.
 
 **[ARCHITECTURE.md](ARCHITECTURE.md)** explains how the whole thing works, in plain language.
+**[GO-LIVE.md](GO-LIVE.md)** is the step-by-step for turning this mockup into a real site with real logins and real uploads.
 
 ---
 
