@@ -34,7 +34,7 @@
 // ============================================================================
 
 window.SPECTRA_CONFIG = {
-  SUPABASE_URL: "https://ghvgbdxdhxzjtesupstg.supabase.co/rest/v1/",
+  SUPABASE_URL: "https://ghvgbdxdhxzjtesupstg.supabase.co",
   SUPABASE_KEY: "sb_publishable_69w4H3KinnVeBT9sQkXR_g_qsz2v_0Y",
 
   // Buckets created in Step 6. Change only if you named them differently.
