@@ -24,6 +24,8 @@ A three-column layout modelled on a chat client: a brand rail, the library list,
 
 **Logo usage** — lockups on light and reversed grounds, clear space, minimum sizes for screen and print, and do/don't examples built from each brand's own palette.
 
+**Assets** — everything extracted from the guide, plus the source PDF. Admins can add brand files here — logos, icons, packaging artwork — in SVG, EPS, AI, PDF, PNG, JPG and more. Artwork previews itself in the list, and uploaded files really do download.
+
 **Admin** — signing in unlocks uploads and editing. Drop a PDF and the extraction pipeline runs in front of you, then proposes values with a confidence score per field. Nothing publishes until a human approves it, and brands still in review are hidden from signed-out visitors.
 
 ## Provenance

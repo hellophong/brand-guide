@@ -141,6 +141,8 @@ Do not start at step 4. The extraction is the interesting problem and the wrong 
 
 **Real in the mockup:** clipboard copy in every format; WCAG contrast ratios calculated live; hex → RGB/CMYK/HSL conversion; palette export as CSS variables, SCSS, Tailwind config and W3C design tokens; search across brand names, colour names, hex values and typefaces; the admin gate, including review-status brands being genuinely hidden from guests; light and dark themes; and the type specimens, which render in the real embedded faces they name rather than a fallback.
 
+Asset uploads are real too, up to a point: files you add on the Assets tab are held as object URLs, so previews render and downloads work — but they live in the tab and are gone on reload. A real build PUTs them to object storage.
+
 **Simulated:** the extraction. Dropping a PDF derives a palette from the file's actual bytes, so different files produce different brands — but it is a hash, not a parser. The pipeline animation shows the real stages in the real order with plausible timings. Downloads are inert. Login accepts any credentials.
 
 **Not there yet:** version history when a brand guide is reissued, multi-tenant separation if you host this for several clients, and an audit trail of who approved what.

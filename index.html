@@ -125,6 +125,7 @@ button{cursor:pointer;border:none;background:none}
 .sb-pip{font-size:10px;font-weight:800;padding:2px 6px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
 .pip-review{background:var(--warn-soft);color:var(--warn)}
 .pip-queue{background:var(--accent-soft);color:var(--accent)}
+.pip-new{background:var(--good-soft);color:var(--good)}
 .sb-empty{padding:18px 10px;color:var(--text-faint);font-size:13px;line-height:1.6}
 
 /* account panel, bottom of sidebar */
@@ -337,9 +338,14 @@ button{cursor:pointer;border:none;background:none}
   width:36px;height:36px;flex:0 0 36px;border-radius:8px;display:grid;place-items:center;
   background:var(--raised-2);font-size:10px;font-weight:800;letter-spacing:.02em;color:var(--text-dim);
 }
+/* uploaded artwork previews itself; everything else shows its extension */
+.file-thumb{background:var(--checker);padding:3px;overflow:hidden}
+.file-thumb img{width:100%;height:100%;object-fit:contain;display:block}
 .file-meta{flex:1;min-width:0}
-.file-meta b{display:block;font-size:13.5px;font-weight:600}
+.file-meta b{display:block;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-meta span{font-size:12px;color:var(--text-faint)}
+.drop-inline{padding:24px 20px}
+.drop-inline .big{font-size:22px;margin-bottom:6px}
 
 /* ---------- home / all brands ---------- */
 .brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
@@ -955,7 +961,7 @@ function renderHeader(){
 
   const tabs = $("#tabs"); tabs.innerHTML = "";
   const defs = b
-    ? [["color","Colour"],["type","Typography"],["logo","Logo usage"],["assets","Assets"]]
+    ? [["color","Colour"],["type","Typography"],["logo","Logo"],["assets","Assets"]]
     : [["all","All brands"],["how","How extraction works"]];
   defs.forEach(([id,label]) => {
     const t = el("button","tab" + (state.tab===id ? " active":""), esc(label));
@@ -1230,17 +1236,92 @@ function renderAssets(page, b){
   page.appendChild(head);
 
   const card = el("div","card");
-  b.assets.forEach(a => {
-    const row = el("div","file-row");
-    row.innerHTML = `<span class="file-ico">${esc(a.kind)}</span>
-      <span class="file-meta"><b>${esc(a.name)}</b><span>${esc(a.meta)}</span></span>
-      <button class="btn btn-ghost">Copy link</button>
-      <button class="btn">Download</button>`;
-    row.querySelectorAll("button")[0].onclick = () => copy(`https://spectra.design/d/${b.id}/${a.name}`, `link to ${a.name}`);
-    row.querySelectorAll("button")[1].onclick = () => toast("Mockup — no file attached", a.name, null, true);
-    card.appendChild(row);
-  });
+  b.assets.forEach(a => card.appendChild(assetRow(b, a)));
   page.appendChild(card);
+
+  /* uploading is a write, so it follows the same gate as everything else */
+  const add = el("div","section");
+  add.innerHTML = `<div class="sec-head"><h3 style="font-size:15px">Add files</h3></div>
+    <p class="sec-sub">Logos, icons, packaging artwork, anything the guide refers to but doesn't contain. ${ACCEPT_LABEL}.</p>`;
+
+  if (!state.admin){
+    const btn = el("button","btn btn-primary","Log in to add files");
+    btn.onclick = () => openLogin("You need admin access to add files.");
+    add.appendChild(btn);
+    page.appendChild(add);
+    return;
+  }
+
+  const drop = el("div","drop drop-inline");
+  drop.tabIndex = 0;
+  drop.setAttribute("role","button");
+  drop.setAttribute("aria-label","Choose files to upload");
+  drop.innerHTML = `<div class="big">⬆</div><b>Drop files here</b>
+    <span>or click to choose · ${ACCEPT_LABEL} · up to 50 MB each</span>`;
+  const input = el("input"); input.type = "file"; input.multiple = true;
+  input.accept = ACCEPT_EXT.map(e => "." + e).join(","); input.hidden = true;
+
+  drop.onclick = () => input.click();
+  drop.onkeydown = e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); input.click(); } };
+  input.onchange = () => { attachFiles(b, input.files); input.value = ""; };
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => attachFiles(b, e.dataTransfer.files));
+
+  add.appendChild(drop);
+  add.appendChild(input);
+  page.appendChild(add);
+}
+
+const ACCEPT_EXT = ["svg","eps","ai","pdf","png","jpg","jpeg","webp","gif","zip","otf","ttf","woff2","ase"];
+const ACCEPT_LABEL = "SVG, EPS, AI, PDF, PNG, JPG and more";
+const PREVIEWABLE = ["svg","png","jpg","jpeg","webp","gif"];
+const fileSize = n => n >= 1048576 ? (n/1048576).toFixed(1) + " MB"
+                    : n >= 1024 ? Math.round(n/1024) + " KB" : n + " B";
+
+function assetRow(b, a){
+  const row = el("div","file-row");
+  const ext = (a.name.split(".").pop() || "").toLowerCase();
+  const thumb = a.url && PREVIEWABLE.includes(ext)
+    ? `<span class="file-ico file-thumb"><img src="${a.url}" alt=""></span>`
+    : `<span class="file-ico">${esc(a.kind)}</span>`;
+  row.innerHTML = `${thumb}
+    <span class="file-meta"><b>${esc(a.name)}</b><span>${esc(a.meta)}</span></span>
+    ${a.uploaded ? '<span class="sb-pip pip-new">Added</span>' : ""}
+    <button class="btn btn-ghost">Copy link</button>
+    <button class="btn">Download</button>`;
+  const [copyBtn, dlBtn] = row.querySelectorAll("button");
+  copyBtn.onclick = () => copy(`https://spectra.design/d/${b.id}/${a.name}`, `link to ${a.name}`);
+  dlBtn.onclick = () => {
+    if (!a.url) return toast("Mockup — no file attached", a.name, null, true);
+    const link = el("a"); link.href = a.url; link.download = a.name;
+    document.body.appendChild(link); link.click(); link.remove();
+    toast("Downloading", a.name);
+  };
+  return row;
+}
+
+/* Files stay in the browser as object URLs — enough for the download and the
+   thumbnail to genuinely work. A real build PUTs them to object storage. */
+function attachFiles(b, fileList){
+  const files = [...(fileList || [])];
+  if (!files.length) return;
+  const ok = [], bad = [];
+  files.forEach(f => {
+    const ext = (f.name.split(".").pop() || "").toLowerCase();
+    if (!ACCEPT_EXT.includes(ext)) return bad.push(f.name);
+    b.assets.push({
+      name: f.name,
+      kind: ext.slice(0,4).toUpperCase(),
+      meta: `${fileSize(f.size)} · added just now by Studio Admin`,
+      url: URL.createObjectURL(f),
+      uploaded: true
+    });
+    ok.push(f.name);
+  });
+  if (ok.length) toast(`Added ${ok.length} file${ok.length>1?"s":""}`, ok.join(", "));
+  if (bad.length) toast(`Skipped ${bad.length} unsupported file${bad.length>1?"s":""}`, bad.join(", "), null, true);
+  if (ok.length) renderPage();
 }
 
 /* ---- how it works tab ---- */
