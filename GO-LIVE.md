@@ -214,9 +214,13 @@ This is the one genuinely technical step, and it's the one to hand over entirely
 
 **What:** Tell the website where its back office is.
 
-1. In Supabase: **Settings** → **API Keys** → the **Publishable and secret API keys** tab. If there's no publishable key yet, click **Create new API keys**.
-2. Copy two things: the **Project URL** (Settings → API) and the **Publishable key** — it starts with `sb_publishable_`.
-3. In Cloudflare: your project → **Settings** → **Variables and Secrets**. Add both.
+1. In Supabase: **Settings** → **API** → copy the **Project URL** (`https://something.supabase.co`).
+2. **Settings** → **API Keys** → **Publishable and secret API keys** tab → copy the **Publishable key** (`sb_publishable_…`). If there isn't one, click **Create new API keys**.
+3. Put both into **`config.js`** in the repo — edit it on GitHub with the pencil icon and commit. Cloudflare redeploys by itself.
+
+> **Not Cloudflare environment variables.** An earlier version of this guide said to put them there. That was wrong for this site: our Worker is *assets-only* — it serves `index.html` and runs no server code at all — so environment variables would have nothing to run in and the page could never read them. They go in `config.js`, which the browser downloads along with the page.
+>
+> This is safe precisely because the publishable key is meant to be public, and the security rules from Step 4 are what actually protect your data. It is not a licence to put the **secret** key there — that one ignores every rule.
 
 **Names changed recently.** Supabase is replacing the old `anon` and `service_role` keys with **publishable** and **secret** keys; the old pair still works but is being retired at the end of 2026. If your dashboard only shows a **Legacy API Keys** tab, use the **anon** key from there — same job.
 
