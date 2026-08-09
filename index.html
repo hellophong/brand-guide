@@ -12,7 +12,7 @@
    both the un-stamped OS-light case and the explicit toggle.
    ============================================================ */
 :root{
-  --rail:#141519;
+  --sunken:#141519;
   --sidebar:#1c1e23;
   --canvas:#24262c;
   --raised:#2b2e35;
@@ -42,7 +42,7 @@
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
-    --rail:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
+    --sunken:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
     --line:#dde0e6; --line-soft:#e8eaee;
     --text:#1b1d23; --text-dim:#5b616c; --text-faint:#888e99;
     --accent:#5a48d6; --accent-hover:#4a39c2; --accent-soft:rgba(90,72,214,.12);
@@ -52,7 +52,7 @@
   }
 }
 :root[data-theme="light"]{
-  --rail:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
+  --sunken:#e4e6eb; --sidebar:#f1f2f5; --canvas:#ffffff; --raised:#f7f8fa; --raised-2:#eceef2;
   --line:#dde0e6; --line-soft:#e8eaee;
   --text:#1b1d23; --text-dim:#5b616c; --text-faint:#888e99;
   --accent:#5a48d6; --accent-hover:#4a39c2; --accent-soft:rgba(90,72,214,.12);
@@ -78,39 +78,6 @@ button{cursor:pointer;border:none;background:none}
 /* ---------- shell ---------- */
 .app{display:flex;height:100vh;overflow:hidden}
 
-/* ---------- brand rail ---------- */
-.rail{
-  width:72px;flex:0 0 72px;background:var(--rail);
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  padding:12px 0;overflow-y:auto;scrollbar-width:none;
-}
-.rail::-webkit-scrollbar{display:none}
-.rail-item{position:relative;width:100%;display:flex;justify-content:center}
-.rail-item::before{
-  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%) scaleY(0);
-  width:4px;height:40px;border-radius:0 4px 4px 0;background:var(--text);
-  transition:transform .18s ease;
-}
-.rail-item:hover::before{transform:translateY(-50%) scaleY(.45)}
-.rail-item.active::before{transform:translateY(-50%) scaleY(1)}
-.rail-btn{
-  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
-  font-weight:700;font-size:15px;letter-spacing:.02em;color:#fff;
-  transition:border-radius .16s ease,transform .16s ease;overflow:hidden;
-}
-.rail-item:hover .rail-btn,.rail-item.active .rail-btn{border-radius:14px}
-.rail-btn:active{transform:translateY(1px)}
-.rail-home{background:var(--accent);color:var(--on-accent)}
-.rail-add{background:var(--raised);color:var(--good);font-size:24px;font-weight:400;line-height:1}
-.rail-add:hover{background:var(--good);color:#fff}
-.rail-divider{width:32px;height:2px;background:var(--line);border-radius:1px;margin:4px 0}
-.rail-badge{
-  position:absolute;bottom:-2px;right:10px;width:14px;height:14px;
-  border-radius:50%;background:var(--warn);color:#141519;font-size:9px;font-weight:900;
-  display:grid;place-items:center;border:3px solid var(--rail);box-sizing:content-box;
-  pointer-events:none;
-}
-
 /* ---------- library sidebar ---------- */
 .sidebar{
   width:264px;flex:0 0 264px;background:var(--sidebar);
@@ -124,7 +91,7 @@ button{cursor:pointer;border:none;background:none}
 .sb-head .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 .sb-search{padding:10px 12px 6px}
 .sb-search input{
-  width:100%;height:32px;border-radius:6px;border:1px solid transparent;background:var(--rail);
+  width:100%;height:32px;border-radius:6px;border:1px solid transparent;background:var(--sunken);
   padding:0 10px;font-size:13.5px;outline:none;
 }
 .sb-search input::placeholder{color:var(--text-faint)}
@@ -136,13 +103,13 @@ button{cursor:pointer;border:none;background:none}
   text-transform:uppercase;color:var(--text-faint);
 }
 .sb-item{
-  width:100%;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:6px;
+  width:100%;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;
   color:var(--text-dim);font-size:14.5px;font-weight:500;text-align:left;transition:background .12s,color .12s;
 }
 .sb-item:hover{background:var(--raised);color:var(--text)}
 .sb-item.active{background:var(--raised-2);color:var(--text);font-weight:600}
-.sb-swatch{width:20px;height:20px;border-radius:6px;flex:0 0 20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .sb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-home{margin-bottom:2px}
 .sb-pip{font-size:10px;font-weight:800;padding:2px 6px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
 .pip-review{background:var(--warn-soft);color:var(--warn)}
 .pip-queue{background:var(--accent-soft);color:var(--accent)}
@@ -151,7 +118,7 @@ button{cursor:pointer;border:none;background:none}
 /* account panel, bottom of sidebar */
 .sb-user{
   flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px;
-  background:var(--rail);border-top:1px solid var(--line-soft);
+  background:var(--sunken);border-top:1px solid var(--line-soft);
 }
 .avatar{
   width:32px;height:32px;border-radius:50%;flex:0 0 32px;display:grid;place-items:center;
@@ -160,7 +127,7 @@ button{cursor:pointer;border:none;background:none}
 .avatar.admin{background:var(--accent)}
 .avatar::after{
   content:"";position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;
-  background:var(--text-faint);border:3px solid var(--rail);box-sizing:content-box;
+  background:var(--text-faint);border:3px solid var(--sunken);box-sizing:content-box;
 }
 .avatar.admin::after{background:var(--good)}
 .sb-user-meta{flex:1;min-width:0;line-height:1.25}
@@ -175,16 +142,11 @@ button{cursor:pointer;border:none;background:none}
 /* ---------- main ---------- */
 .main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--canvas)}
 .topbar{
-  height:52px;flex:0 0 52px;display:flex;align-items:center;gap:10px;padding:0 16px;
+  height:52px;flex:0 0 52px;display:flex;align-items:stretch;gap:10px;padding:0 16px;
   border-bottom:1px solid var(--line-soft);box-shadow:0 1px 0 rgba(0,0,0,.12);
 }
-.topbar .hash{color:var(--text-faint);font-size:20px;font-weight:400;line-height:1}
-.topbar h2{font-size:15.5px;font-weight:700;margin:0;letter-spacing:-.01em}
-.topbar .sep{width:1px;height:24px;background:var(--line);margin:0 4px}
-.topbar .desc{
-  font-size:13px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
-}
-.menu-btn{display:none}
+.top-right{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto}
+.menu-btn{display:none;align-self:center}
 .btn{
   display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 14px;border-radius:6px;
   font-size:13.5px;font-weight:600;background:var(--raised-2);color:var(--text);
@@ -198,19 +160,20 @@ button{cursor:pointer;border:none;background:none}
 .btn-lg{height:40px;padding:0 20px;font-size:14.5px}
 .btn[disabled]{opacity:.5;pointer-events:none}
 
+/* the tabs are the top row — there is no separate title bar above them */
 .tabs{
-  display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--line-soft);
-  flex:0 0 auto;overflow-x:auto;scrollbar-width:none;
+  display:flex;gap:2px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none;align-items:stretch;
 }
 .tabs::-webkit-scrollbar{display:none}
 .tab{
-  position:relative;padding:12px 12px 11px;font-size:13.5px;font-weight:600;color:var(--text-faint);
+  position:relative;display:flex;align-items:center;padding:0 12px;
+  font-size:13.5px;font-weight:600;color:var(--text-faint);
   white-space:nowrap;transition:color .12s;
 }
 .tab:hover{color:var(--text-dim)}
 .tab.active{color:var(--text)}
 .tab.active::after{
-  content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px;background:var(--accent);
+  content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;border-radius:2px;background:var(--accent);
 }
 .scroll{flex:1;overflow-y:auto;min-height:0}
 .page{max-width:1080px;margin:0 auto;padding:28px 28px 96px}
@@ -228,15 +191,6 @@ button{cursor:pointer;border:none;background:none}
 .card{background:var(--raised);border:1px solid var(--line-soft);border-radius:var(--radius)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 
-/* hero */
-.hero{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
-.hero-mark{
-  width:96px;height:96px;flex:0 0 96px;border-radius:20px;display:grid;place-items:center;
-  background:var(--raised);border:1px solid var(--line-soft);
-}
-.hero-body{flex:1;min-width:260px}
-.hero-body h3{font-size:26px;font-weight:800;margin:0 0 4px;letter-spacing:-.025em;text-wrap:balance}
-.hero-body p{margin:0 0 12px;color:var(--text-dim);font-size:14.5px;max-width:60ch}
 .meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .chip{
   display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:20px;
@@ -309,7 +263,7 @@ button{cursor:pointer;border:none;background:none}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 
 /* ---------- typography ---------- */
-.seg{display:inline-flex;padding:3px;background:var(--rail);border-radius:8px;gap:2px}
+.seg{display:inline-flex;padding:3px;background:var(--sunken);border-radius:8px;gap:2px}
 .seg button{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;color:var(--text-dim)}
 .seg button.active{background:var(--raised-2);color:var(--text)}
 .type-row{padding:20px;margin-bottom:12px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
@@ -418,7 +372,7 @@ button{cursor:pointer;border:none;background:none}
   color:var(--text-dim);margin-bottom:7px;
 }
 .field input{
-  width:100%;height:40px;border-radius:5px;border:1px solid var(--rail);background:var(--rail);
+  width:100%;height:40px;border-radius:5px;border:1px solid var(--sunken);background:var(--sunken);
   padding:0 11px;outline:none;font-size:15px;
 }
 .field input:focus{border-color:var(--accent)}
@@ -473,7 +427,7 @@ button{cursor:pointer;border:none;background:none}
 }
 .toast{
   display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:8px;
-  background:var(--rail);color:var(--text);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:600;
+  background:var(--sunken);color:var(--text);box-shadow:var(--shadow-lg);font-size:13.5px;font-weight:600;
   border:1px solid var(--line);animation:rise .22s cubic-bezier(.2,.9,.3,1.2);
   max-width:min(90vw,540px);
 }
@@ -486,24 +440,22 @@ button{cursor:pointer;border:none;background:none}
 /* responsive */
 .scrim{display:none}
 @media (max-width:900px){
-  .rail,.sidebar{
-    position:fixed;top:0;bottom:0;z-index:60;transform:translateX(-100%);transition:transform .2s ease;
+  .sidebar{
+    position:fixed;top:0;bottom:0;left:0;z-index:60;transform:translateX(-100%);transition:transform .2s ease;
   }
-  .rail{left:0}
-  .sidebar{left:72px}
-  body.nav-open .rail,body.nav-open .sidebar{transform:none}
+  body.nav-open .sidebar{transform:none}
   body.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}
   .menu-btn{display:grid}
   .page{padding:20px 16px 80px}
-  .topbar .desc{display:none}
+}
+@media (max-width:600px){
+  .topbar{padding:0 10px;gap:6px}
+  .tab{padding:0 9px;font-size:13px}
 }
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- brand rail -->
-  <nav class="rail" id="rail" aria-label="Brands"></nav>
-
   <!-- library sidebar -->
   <aside class="sidebar">
     <div class="sb-head"><span class="dot"></span><h1>Spectra</h1><span class="eyebrow" style="margin-left:auto">Library</span></div>
@@ -518,14 +470,12 @@ button{cursor:pointer;border:none;background:none}
   <main class="main">
     <header class="topbar">
       <button class="icon-btn menu-btn" id="menuBtn" aria-label="Show library">☰</button>
-      <span class="hash" id="topHash">#</span>
-      <h2 id="topTitle">Library</h2>
-      <span class="sep"></span>
-      <span class="desc" id="topDesc"></span>
-      <button class="icon-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
-      <div id="authSlot"></div>
+      <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+      <div class="top-right">
+        <button class="icon-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg></button>
+        <div id="authSlot"></div>
+      </div>
     </header>
-    <nav class="tabs" id="tabs" aria-label="Brand sections"></nav>
     <div class="scroll" id="scroll"><div class="page" id="page"></div></div>
   </main>
 </div>
@@ -861,7 +811,7 @@ const BRANDS = [
 const state = {
   brands: BRANDS.slice(),
   view: "home",          // "home" | brand id
-  tab: "overview",
+  tab: "all",
   typeMode: "digital",
   admin: false,
   query: "",
@@ -936,29 +886,6 @@ function toast(title, value, swatch, isWarn){
 /* =============================================================
    6. RENDER — rail, sidebar, header
    ============================================================= */
-function renderRail(){
-  const rail = $("#rail"); rail.innerHTML = "";
-  const home = el("div","rail-item" + (state.view==="home" ? " active":""));
-  home.innerHTML = `<button class="rail-btn rail-home" title="All brands" aria-label="All brands">◈</button>`;
-  home.onclick = () => go("home");
-  rail.appendChild(home);
-  rail.appendChild(el("div","rail-divider"));
-
-  visibleBrands().forEach(b => {
-    const item = el("div","rail-item" + (state.view===b.id ? " active":""));
-    const c = allColors(b)[0].hex;
-    item.innerHTML = `<button class="rail-btn" style="background:${c};color:${onColor(c).fg}" title="${esc(b.name)}" aria-label="${esc(b.name)}">${esc(b.monogram)}</button>` +
-      (b.status==="review" ? `<span class="rail-badge" title="Awaiting review">!</span>` : "");
-    item.onclick = () => go(b.id);
-    rail.appendChild(item);
-  });
-
-  const add = el("div","rail-item");
-  add.innerHTML = `<button class="rail-btn rail-add" title="Add a brand" aria-label="Add a brand">+</button>`;
-  add.onclick = () => state.admin ? openUpload() : openLogin("You need admin access to add a brand.");
-  rail.appendChild(add);
-}
-
 function renderSidebar(){
   const list = $("#sbList"); list.innerHTML = "";
   const q = state.query.trim().toLowerCase();
@@ -971,12 +898,16 @@ function renderSidebar(){
 
   const row = b => {
     const btn = el("button","sb-item" + (state.view===b.id ? " active":""));
-    btn.innerHTML = `<i class="sb-swatch" style="background:${allColors(b)[0].hex}"></i>
-      <span class="sb-name">${esc(b.name)}</span>
+    btn.innerHTML = `<span class="sb-name">${esc(b.name)}</span>
       ${b.status==="review" ? '<span class="sb-pip pip-review">Review</span>' : ""}`;
     btn.onclick = () => go(b.id);
     return btn;
   };
+
+  const home = el("button","sb-item sb-home" + (state.view==="home" ? " active":""),
+    `<span class="sb-name">All brands</span>`);
+  home.onclick = () => go("home");
+  list.appendChild(home);
 
   if (published.length){
     list.appendChild(el("div","sb-cat",`<span>Published — ${published.length}</span>`));
@@ -1004,10 +935,6 @@ function renderSidebar(){
 
 function renderHeader(){
   const b = brandById(state.view);
-  $("#topHash").textContent = b ? "#" : "◈";
-  $("#topTitle").textContent = b ? b.short.toLowerCase().replace(/\s+/g,"-") : "all-brands";
-  $("#topDesc").textContent  = b ? b.tagline : `${visibleBrands().length} brands · every colour on this page copies on click`;
-
   $("#authSlot").innerHTML = state.admin
     ? `<button class="btn btn-primary" id="addBtn">＋ Add brand</button>`
     : `<button class="btn btn-primary" id="loginBtn">Log in</button>`;
@@ -1016,8 +943,8 @@ function renderHeader(){
 
   const tabs = $("#tabs"); tabs.innerHTML = "";
   const defs = b
-    ? [["overview","Overview"],["color","Colour"],["type","Typography"],["logo","Logo usage"],["assets","Assets"]]
-    : [["overview","All brands"],["how","How extraction works"]];
+    ? [["color","Colour"],["type","Typography"],["logo","Logo usage"],["assets","Assets"]]
+    : [["all","All brands"],["how","How extraction works"]];
   defs.forEach(([id,label]) => {
     const t = el("button","tab" + (state.tab===id ? " active":""), esc(label));
     t.onclick = () => { state.tab = id; renderHeader(); renderPage(); };
@@ -1047,7 +974,7 @@ function renderPage(){
     page.appendChild(banner);
   }
 
-  ({ overview:renderOverview, color:renderColor, type:renderType, logo:renderLogo, assets:renderAssets }[state.tab] || renderOverview)(page, b);
+  ({ color:renderColor, type:renderType, logo:renderLogo, assets:renderAssets }[state.tab] || renderColor)(page, b);
 }
 
 function renderHome(page){
@@ -1055,7 +982,7 @@ function renderHome(page){
   const total = visible.reduce((n,b)=>n+allColors(b).length,0);
   const head = el("div","section");
   head.innerHTML = `<div class="sec-head"><h3>The library</h3><span class="count">${visible.length} brands · ${total} colours</span></div>
-    <p class="sec-sub">Every brand here started as a PDF someone dropped on the page. Spectra read it, pulled the palette, the type stack and the logo rules, and turned all of it into values you can copy. Pick a brand on the left, or open one below.</p>`;
+    <p class="sec-sub">Every brand here started as a PDF someone dropped on the page. Spectra read it, pulled the palette, the type stack and the logo rules, and turned all of it into values you can copy. Pick a brand from the library, or open one below.</p>`;
   page.appendChild(head);
 
   const grid = el("div","brand-grid");
@@ -1082,57 +1009,14 @@ function renderHome(page){
   page.appendChild(cta);
 }
 
-function renderOverview(page, b){
-  const cols = allColors(b);
-  const hero = el("div","hero");
-  hero.innerHTML = `<div class="hero-mark">${markSVG(b,56)}</div>
-    <div class="hero-body">
-      <h3>${esc(b.name)}</h3>
-      <p>${esc(b.tagline)}</p>
-      <div class="meta-row">
-        <span class="chip">📄 <span class="mono">${esc(b.source.file)}</span></span>
-        <span class="chip">${b.source.pages} pages</span>
-        <span class="chip">Extracted ${esc(b.source.extracted)}</span>
-        <span class="chip ${b.source.confidence>=90?"good":b.source.confidence>=80?"warn":"bad"}">${b.source.confidence}% confidence</span>
-        <span class="chip">Owner: ${esc(b.source.owner)}</span>
-      </div>
-    </div>`;
-  page.appendChild(hero);
-
-  const grid = el("div","ov-grid"); grid.style.marginTop = "26px";
-  const t0 = b.type.digital[0], t1 = b.type.digital[1] || b.type.digital[0];
-  const risky = cols.filter(c => onColor(c.hex).ratio < 4.5).length;
-  grid.innerHTML = `
-    <div class="card ov-card">
-      <span class="eyebrow">Palette</span>
-      <div class="ov-strip">${cols.slice(0,8).map(c=>`<i style="background:${c.hex}"></i>`).join("")}</div>
-      <span class="ov-note">${cols.length} colours across ${b.colors.length} groups. ${risky ? risky + " need care for text contrast." : "All pass AA against black or white."}</span>
-    </div>
-    <div class="card ov-card">
-      <span class="eyebrow">Type pairing</span>
-      <div class="ov-val" style="font-family:${t0.stack};font-weight:${t0.weight}">${esc(t0.family)}</div>
-      <span class="ov-note">with <b style="font-family:${t1.stack}">${esc(t1.family)}</b> · ${b.type.digital.length} digital styles, ${b.type.print.length} print styles.</span>
-    </div>
-    <div class="card ov-card">
-      <span class="eyebrow">Logo</span>
-      <div style="display:flex;align-items:center;gap:10px">${markSVG(b,34)}<span class="ov-note" style="margin:0">Min ${esc(b.logo.minDigital)} on screen<br>Min ${esc(b.logo.minPrint)} in print</span></div>
-      <span class="ov-note">${b.logo.dos.length} approved uses · ${b.logo.donts.length} restrictions.</span>
-    </div>
-    <div class="card ov-card">
-      <span class="eyebrow">Extraction confidence</span>
-      <div class="ov-val">${b.source.confidence}%</div>
-      <div class="meter"><i style="width:${b.source.confidence}%;background:${b.source.confidence>=90?"var(--good)":b.source.confidence>=80?"var(--warn)":"var(--bad)"}"></i></div>
-      <span class="ov-note">How much of this page came straight off the PDF rather than a person typing it in.</span>
-    </div>`;
-  page.appendChild(grid);
-
-  const quick = el("div","section");
-  quick.innerHTML = `<div class="sec-head"><h3>Copy the essentials</h3><span class="count">click any value</span></div>
-    <p class="sec-sub">The four things people ask for by message twice a week. Now they don't have to ask.</p>`;
-  const row = el("div","swatch-grid");
-  cols.slice(0,4).forEach(c => row.appendChild(swatchCard(c)));
-  quick.appendChild(row);
-  page.appendChild(quick);
+/* Section heading for a brand page. With no title bar above the tabs, this is
+   the only thing naming the brand you are looking at, so every tab carries it. */
+function brandHead(b, title, count, sub){
+  const head = el("div","section");
+  head.innerHTML = `<span class="eyebrow">${esc(b.name)}</span>
+    <div class="sec-head"><h3>${esc(title)}</h3>${count ? `<span class="count">${esc(count)}</span>` : ""}</div>
+    ${sub ? `<p class="sec-sub">${esc(sub)}</p>` : ""}`;
+  return head;
 }
 
 /* ---- colour ---- */
@@ -1173,10 +1057,8 @@ function swatchCard(c){
 }
 
 function renderColor(page, b){
-  const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Colour</h3><span class="count">${allColors(b).length} swatches</span></div>
-    <p class="sec-sub">Click a swatch to copy its hex. Click a single row to copy just that value. Contrast badges are measured against whichever of black or white performs better on that colour.</p>`;
-  page.appendChild(head);
+  page.appendChild(brandHead(b, "Colour", `${allColors(b).length} swatches`,
+    "Click a swatch to copy its hex. Click a single row to copy just that value. Contrast badges are measured against whichever of black or white performs better on that colour."));
 
   b.colors.forEach(group => {
     const sec = el("div","section");
@@ -1215,9 +1097,8 @@ const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,
 
 /* ---- typography ---- */
 function renderType(page, b){
-  const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Typography</h3></div>
-    <p class="sec-sub">Print and digital are different specifications of the same voice — point sizes and leading for one, pixels and line-height for the other. Switch between them here.</p>`;
+  const head = brandHead(b, "Typography", null,
+    "Print and digital are different specifications of the same voice — point sizes and leading for one, pixels and line-height for the other. Switch between them here.");
   const seg = el("div","seg");
   [["digital","Digital"],["print","Print"]].forEach(([id,label]) => {
     const btn = el("button", state.typeMode===id ? "active" : null, label);
@@ -1256,10 +1137,8 @@ function renderLogo(page, b){
   const primary = allColors(b)[0].hex;
   const light = allColors(b).find(c => isLight(c.hex)) || { hex:"#F7F5F1" };
 
-  const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Logo usage</h3></div>
-    <p class="sec-sub">The lockup, the room it needs, the sizes below which it stops working, and the things people keep doing to it anyway.</p>`;
-  page.appendChild(head);
+  page.appendChild(brandHead(b, "Logo usage", null,
+    "The lockup, the room it needs, the sizes below which it stops working, and the things people keep doing to it anyway."));
 
   const grid = el("div","logo-grid");
   grid.innerHTML = `
@@ -1325,9 +1204,17 @@ function renderLogo(page, b){
 
 /* ---- assets ---- */
 function renderAssets(page, b){
-  const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Assets</h3><span class="count">${b.assets.length} files</span></div>
-    <p class="sec-sub">Everything extracted from the guide, plus the source PDF itself. In a live build these are signed download links that expire, so nothing leaks past the people you shared it with.</p>`;
+  const head = brandHead(b, "Assets", `${b.assets.length} files`,
+    "Everything extracted from the guide, plus the source PDF itself. In a live build these are signed download links that expire, so nothing leaks past the people you shared it with.");
+  /* provenance for the whole brand lives here, next to the document it came from */
+  const meta = el("div","meta-row");
+  meta.innerHTML = `<span class="chip">📄 <span class="mono">${esc(b.source.file)}</span></span>
+    <span class="chip">${b.source.pages} pages</span>
+    <span class="chip">Extracted ${esc(b.source.extracted)}</span>
+    <span class="chip ${b.source.confidence>=90?"good":b.source.confidence>=80?"warn":"bad"}">${b.source.confidence}% confidence</span>
+    <span class="chip">Owner: ${esc(b.source.owner)}</span>`;
+  meta.style.marginBottom = "18px";
+  head.appendChild(meta);
   page.appendChild(head);
 
   const card = el("div","card");
@@ -1569,15 +1456,15 @@ function drawReview(meta){
    ============================================================= */
 function go(view){
   state.view = view;
-  state.tab = "overview";
+  state.tab = view === "home" ? "all" : "color";   /* a brand opens on its colour */
   document.body.classList.remove("nav-open");
   renderAll();
 }
 function renderAll(){
   /* signing out while viewing an unapproved brand drops you back to the library */
   const current = brandById(state.view);
-  if (current && !visibleBrands().includes(current)) state.view = "home";
-  renderRail(); renderSidebar(); renderHeader(); renderPage();
+  if (current && !visibleBrands().includes(current)){ state.view = "home"; state.tab = "all"; }
+  renderSidebar(); renderHeader(); renderPage();
 }
 
 $("#search").addEventListener("input", e => { state.query = e.target.value; renderSidebar(); });
