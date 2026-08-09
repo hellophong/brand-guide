@@ -1007,7 +1007,7 @@ function renderHeader(){
     ? [["upload","Upload"],["queue","Processing" + pill(jobsRunning())],
        ["review","Needs review" + pill(jobsToReview())],["brands","Brands"],["activity","Activity"]]
     : b
-    ? [["color","Colour"],["type","Typography"],["logo","Logo"],["assets","Assets"]]
+    ? [["logo","Logo"],["color","Colour"],["type","Typography"],["assets","Assets"]]
     : [["all","All brands"],["how","How extraction works"]];
   defs.forEach(([id,label]) => {
     /* labels are literals defined above, so the count pill can carry markup */
@@ -1042,7 +1042,7 @@ function renderPage(keepScroll){
     page.appendChild(banner);
   }
 
-  ({ color:renderColor, type:renderType, logo:renderLogo, assets:renderAssets }[state.tab] || renderColor)(page, b);
+  ({ logo:renderLogo, color:renderColor, type:renderType, assets:renderAssets }[state.tab] || renderLogo)(page, b);
 }
 
 function renderHome(page){
@@ -1802,7 +1802,7 @@ function adminActivity(page){
    ============================================================= */
 function go(view, tab){
   state.view = view;
-  state.tab = tab || (view === "home" ? "all" : view === "admin" ? "upload" : "color");
+  state.tab = tab || (view === "home" ? "all" : view === "admin" ? "upload" : "logo");
   document.body.classList.remove("nav-open");
   renderAll();
 }
