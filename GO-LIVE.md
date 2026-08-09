@@ -113,7 +113,11 @@ Then:
 5. Leave the build settings alone. The repo already tells Cloudflare what to do.
 6. Click **Deploy**.
 
-**You'll know it worked when:** you get a link ending in `.workers.dev` and the mockup loads in your browser.
+**How long it takes:** the first deploy usually runs **1 to 3 minutes**. A timer counting up to 20, 40, 90 seconds is normal — it's cloning the repo and uploading. Don't refresh in a panic; the build runs on Cloudflare's machines, not in your browser, so it carries on regardless of what you do with the tab.
+
+**You'll know it worked when:** the log ends with something like `Success! Uploaded 1 files` and `Deployment complete`, and you get a link ending in `.workers.dev` that loads the mockup.
+
+**You'll know it failed when:** the log stops on a red **Build failed**. It won't sit there silently — a failure is loud and immediate.
 
 #### Can't find "Workers & Pages" in the sidebar?
 
