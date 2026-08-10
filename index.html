@@ -1474,7 +1474,7 @@ function paintMode(){
   pill.className = "mode-pill " + (LIVE ? "live" : "demo");
   pill.textContent = LIVE ? "Live" : "Demo";
   pill.title = LIVE
-    ? "Signed-in accounts are real. Brand data is still the built-in sample set."
+    ? "Real accounts, real uploads, real extraction. The library is your Supabase project."
     : (CONFIGURED ? "Could not load the Supabase library — running on sample data."
                   : "config.js is not filled in — running on sample data.");
   $("#ssoRow").hidden = LIVE;          /* neither provider is configured yet */
@@ -1522,6 +1522,9 @@ async function adoptSession(session, announce){
       else toast("Signed in, but not an admin", "ask an admin to add you", null, true);
     }
   }
+  /* who you are decides what the database will hand over — drafts appear when
+     an admin signs in and vanish again on the way out, so reload either way */
+  if (LIVE) await loadLibrary();
   renderAll();
 }
 
@@ -1561,6 +1564,8 @@ function demoSignIn(how){
 async function signOut(){
   if (LIVE){ try{ await SB.auth.signOut(); }catch(e){ console.warn(e); } }
   state.admin = false; state.user = null;
+  state.jobs = [];                       // a queue belongs to a session, not a library
+  if (LIVE) await loadLibrary();         // drafts go back out of sight
   renderAll();
   toast("Signed out", "back to read-only");
 }
@@ -1575,11 +1580,217 @@ document.querySelectorAll("[data-sso]").forEach(b => b.onclick = () => demoSignI
 
 /* Come back to a still-valid session instead of making people sign in again. */
 async function restoreSession(){
-  if (!LIVE) return;
+  if (!LIVE) return false;
   try{
     const { data } = await SB.auth.getSession();
-    if (data && data.session) await adoptSession(data.session, false);
+    if (data && data.session){ await adoptSession(data.session, false); return true; }
   }catch(e){ console.warn("session restore failed:", e); }
+  return false;
+}
+
+/* =============================================================
+   8b. LIVE DATA
+   Turning database rows into the brand objects the rest of the
+   interface already knows how to draw.
+
+   The tables store less than the mockup's hand-written brands do
+   — there is no "sample sentence" column, and the extraction has
+   no opinion about font stacks. Everything the database does not
+   know is filled in here, and labelled honestly rather than
+   invented: "Not stated in the guide" is a true answer.
+   ============================================================= */
+const GUIDES_BUCKET = CFG.GUIDES_BUCKET || "brand-guides";
+const ASSETS_BUCKET = CFG.ASSETS_BUCKET || "brand-assets";
+
+/* The seven faces embedded in this page, matched loosely so that a font name
+   read out of a PDF ("ArialMT", "Inter-Regular", "Slack-Larsseit") still lands
+   on something sensible. An unmatched family falls back to the system stack —
+   the name is still shown truthfully, it just renders in a stand-in. */
+const FACE_STACKS = [
+  [/fraunces/i,              "'Fraunces',Georgia,'Times New Roman',serif"],
+  [/source\s*serif/i,        "'Source Serif 4',Georgia,'Times New Roman',serif"],
+  [/archivo\s*black/i,       "'Archivo Black',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"],
+  [/atkinson/i,              "'Atkinson Hyperlegible',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"],
+  [/public\s*sans/i,         "'Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"],
+  [/plex\s*mono|mono|courier/i, "'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"],
+  [/inter|helvetica|arial|roboto|sans/i, "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"],
+  [/serif|georgia|times|garamond|caslon/i, "Georgia,'Times New Roman',serif"]
+];
+const stackFor = family => {
+  const hit = FACE_STACKS.find(([re]) => re.test(family || ""));
+  return hit ? hit[1] : "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+};
+
+/* Every value carries where it came from. 📄 stated beats ⚙ derived, always —
+   the same distinction the rest of the library makes. */
+function colourNote(c){
+  const bits = [c.source === "stated" ? "📄 Stated in the guide." : "⚙ Derived from the guide's page fills."];
+  if (c.found_on_page) bits.push(`Seen on page ${c.found_on_page}.`);
+  if (typeof c.confidence === "number") bits.push(`${c.confidence}% confidence.`);
+  return bits.join(" ");
+}
+
+const GROUP_ORDER = ["Primary","Secondary","Neutral","Functional"];
+const groupLabel = g => g === "Neutral" ? "Neutrals" : (g || "Other");
+
+/* A stable 0–3 so a brand keeps the same drawn mark between page loads. */
+function markFor(id){
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) >>> 0;
+  return h % 4;
+}
+
+function brandFromRows(row, colors, typefaces, rules, doc){
+  const name = row.name || "Untitled Brand";
+  const words = name.trim().split(/\s+/);
+  const monogram = (words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)).toUpperCase();
+
+  /* --- colours, grouped the way the library displays them ---------------- */
+  const seen = [...new Set(colors.map(c => c.group_name || "Other"))];
+  const order = GROUP_ORDER.concat(seen.filter(g => !GROUP_ORDER.includes(g)));
+  const groups = [];
+  order.forEach(g => {
+    const items = colors.filter(c => (c.group_name || "Other") === g);
+    if (!items.length) return;
+    groups.push({ group: groupLabel(g), items: items.map(c => ({
+      name: c.name, hex: c.hex,
+      cmyk: c.cmyk || undefined, pantone: c.pantone || undefined,
+      note: colourNote(c)
+    }))});
+  });
+  /* A guide with no readable colours is a real outcome — a scan with no text
+     layer does exactly this. Say so rather than rendering an empty page. */
+  if (!groups.length) groups.push({ group:"Primary", items:[
+    { name:"Nothing read", hex:"#8A8781",
+      note:"The extraction found no vector fills in this guide. It is probably a scan, which needs a person." }
+  ]});
+
+  /* --- type -------------------------------------------------------------- */
+  const toStyle = t => {
+    const specs = {};
+    const stated = t.specs && typeof t.specs === "object" ? t.specs.stated : null;
+    if (stated) specs.Stated = String(stated);
+    specs.Source = "Embedded font table";
+    if (typeof t.confidence === "number") specs.Confidence = t.confidence + "%";
+    const isDisplay = /display|head|title/i.test(t.role || "");
+    return {
+      role: t.role || "Text",
+      family: t.family,
+      stack: stackFor(t.family),
+      weight: /black|bold|heavy|semi\s*bold|semibold/i.test(t.family || "") ? 700 : 400,
+      specs,
+      sample: isDisplay ? name : "The quick brown fox jumps over the lazy dog.",
+      usage: t.usage || "No usage note was found in the guide. Confirm before publishing."
+    };
+  };
+  const digital = typefaces.filter(t => t.medium === "digital").map(toStyle);
+  const print   = typefaces.filter(t => t.medium === "print").map(toStyle);
+
+  /* --- logo rules -------------------------------------------------------- */
+  const pick = k => rules.filter(r => r.kind === k).map(r => r.text);
+  const sizes = pick("min_size");
+  const logo = {
+    /* the model returns minimum sizes as free text and does not separate
+       screen from print, so the first two are shown in that order and the
+       wording is left exactly as the guide put it */
+    minDigital: sizes[0] || "Not stated in the guide",
+    minPrint:   sizes[1] || sizes[0] || "Not stated in the guide",
+    clearspace: pick("clearspace")[0] || "Not stated in the guide.",
+    dos:   pick("do").length   ? pick("do")   : ["No usage rules were found in the guide."],
+    donts: pick("dont").length ? pick("dont") : ["No prohibitions were found in the guide."]
+  };
+
+  /* --- files ------------------------------------------------------------- */
+  const assets = [];
+  if (doc){
+    assets.push({
+      name: doc.filename, kind: "PDF",
+      meta: `Source document${doc.pages ? " · " + doc.pages + " pages" : ""}${doc.size_bytes ? " · " + fileSize(doc.size_bytes) : ""}`,
+      bucket: GUIDES_BUCKET, storage_key: doc.storage_key
+    });
+  }
+
+  return {
+    id: row.slug || row.id,
+    uuid: row.id,                       // what the database calls it
+    live: true,
+    name, short: words[0], monogram, mark: markFor(row.id),
+    status: row.status === "published" ? "published" : "review",
+    tagline: row.tagline || "Extracted from the guide. Check it before you trust it.",
+    source: {
+      file: doc ? doc.filename : "—",
+      pages: (doc && doc.pages) || 0,
+      size: doc && doc.size_bytes ? fileSize(doc.size_bytes) : "—",
+      extracted: new Date(row.updated_at || row.created_at)
+        .toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }),
+      confidence: typeof row.confidence === "number" ? row.confidence : 0,
+      owner: "Studio"
+    },
+    _proposed: colors.map(c => ({
+      name: c.name, hex: c.hex, conf: c.confidence ?? 0,
+      cmyk: c.cmyk || null, pantone: c.pantone || null, stated: c.source === "stated"
+    })),
+    colors: groups,
+    type: { digital, print },
+    logo, assets
+  };
+}
+
+/* One trip for each table rather than one per brand. RLS does the filtering:
+   signed out, this returns published brands only, and their children with
+   them. Nothing here has to remember to hide a draft. */
+async function loadLibrary(){
+  if (!LIVE) return;
+  try{
+    const [b, c, t, r, d] = await Promise.all([
+      SB.from("brands").select("*").order("created_at", { ascending: true }),
+      SB.from("colors").select("*").order("sort_order", { ascending: true }),
+      SB.from("typefaces").select("*").order("sort_order", { ascending: true }),
+      SB.from("logo_rules").select("*").order("sort_order", { ascending: true }),
+      SB.from("documents").select("*").order("uploaded_at", { ascending: false })
+    ]);
+    if (b.error) throw b.error;
+
+    const by = (rows, id) => (rows || []).filter(x => x.brand_id === id);
+    state.brands = (b.data || [])
+      /* a brand mid-extraction has nothing to show yet */
+      .filter(row => row.status !== "processing")
+      .map(row => brandFromRows(
+        row, by(c.data, row.id), by(t.data, row.id), by(r.data, row.id),
+        (d.data || []).find(x => x.brand_id === row.id)
+      ));
+    return true;
+  }catch(e){
+    console.warn("could not load the library:", e);
+    toast("Couldn't load the library", e.message || "check the Supabase project is running", null, true);
+    return false;
+  }
+}
+
+/* Database errors are written for developers. These are the ones that will
+   actually happen to you, said in a way you can act on. */
+function writeError(err, what){
+  const m = (err && err.message) || String(err);
+  if (/row-level security|violates row-level/i.test(m))
+    return `Not allowed to ${what}. You are signed in but your account is not in the admins table — ` +
+           `or migration 0002 (the storage locks) has not been run against this project yet.`;
+  if (/bucket not found/i.test(m))
+    return `Could not ${what}: the "${GUIDES_BUCKET}" bucket does not exist. Create it under Storage, and leave it private.`;
+  if (/duplicate key|unique constraint/i.test(m))
+    return `Could not ${what}: a brand with that name is already in the library.`;
+  if (/payload too large|exceeded the maximum/i.test(m))
+    return `Could not ${what}: the file is larger than this project's upload limit.`;
+  return `Could not ${what}: ${m}`;
+}
+
+/* invoke() puts a failed function's body out of reach on the error object
+   rather than in the message, so the useful part has to be dug out. */
+async function invokeError(err){
+  try{
+    const body = await err.context.json();
+    if (body && body.error) return String(body.error);
+  }catch(_){ /* not JSON, or no body */ }
+  return (err && err.message) || "The extraction function could not be reached.";
 }
 
 /* =============================================================
@@ -1588,14 +1799,13 @@ async function restoreSession(){
    you drop, so two different PDFs give two different brands.
    A production build parses the page content instead.
    ============================================================= */
-/* Flip this to true when the real extraction Edge Function is deployed.
-   While it is false, NOTHING here reads the PDF: the palette, the type and
-   the logo rules are generated from a hash of the file's bytes. The interface
-   must say so everywhere, or it is lying to the person using it. */
-const EXTRACTION_IS_REAL = false;
+/* Is the PDF actually being read? Only when we are connected to a real
+   project — the Edge Function that opens the file lives there. Offline this
+   is a hash of the file's bytes, and the interface says so on every screen,
+   because a mockup that hides being a mockup is worse than no mockup. */
+const EXTRACTION_IS_REAL = LIVE;
 
-/* Stage names describe the pipeline the real function will run. They are
-   shown with a "simulated" marker until it exists. */
+/* Stage names for the demo, with how long to pretend each one takes. */
 const PIPELINE = [
   ["Uploading to private storage", 520],
   ["Splitting 1 PDF into pages", 620],
@@ -1606,18 +1816,138 @@ const PIPELINE = [
   ["Finding logo lockups and usage rules", 580],
   ["Scoring confidence per field", 420]
 ];
+const DEMO_STAGES = PIPELINE.map(p => p[0]);
+
+/* The live pipeline is shorter because it is honest: these are five things
+   that really happen, not eight things that sound like they might. Reading
+   the PDF and asking the model is one opaque call to the Edge Function, and
+   it is the slow one — twenty seconds is normal, a long guide takes more. */
+const LIVE_STAGES = [
+  "Creating the brand record",
+  "Uploading to private storage",
+  "Filing the document",
+  "Reading the PDF and asking the model",
+  "Loading the result"
+];
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 let jobSeq = 0;
 
-/* Extraction is a background job: submitting returns immediately and the
-   queue keeps running whether or not anyone is watching the portal. */
-async function submitJob(file){
+const submitJob = file => LIVE ? submitJobLive(file) : submitJobDemo(file);
+
+/* Turn "Acme_Brand_Guidelines_v4_FINAL.pdf" into "Acme". The extraction will
+   usually rename the brand to whatever the guide calls itself; this is only
+   what the row is called for the twenty seconds before that happens. */
+function brandNameFromFile(filename){
+  const base = filename.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ")
+    .replace(/\b(brand|guide|guidelines|identity|standards|book|final|draft|v?\d+(\.\d+)?)\b/gi, "")
+    .trim().replace(/\s+/g, " ");
+  return (base || "Untitled Brand").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* slug is unique in the database, so check before inserting rather than
+   catching the collision — the message you get back from a constraint is not
+   one to show a person. */
+async function uniqueSlug(name){
+  const root = slug(name) || "brand";
+  for (let i = 0; i < 8; i++){
+    const candidate = i ? `${root}-${i + 1}` : root;
+    const { data } = await SB.from("brands").select("id").eq("slug", candidate).maybeSingle();
+    if (!data) return candidate;
+  }
+  return `${root}-${Date.now().toString(36)}`;
+}
+
+/* Storage keys must start with the brand's uuid: that is how the locks in
+   migration 0002 work out which brand a file belongs to, and therefore who
+   is allowed to download it. */
+const storageKeyFor = (brandId, filename) =>
+  `${brandId}/${filename.replace(/[^\w.\- ]+/g, "_").replace(/\s+/g, "-").slice(-120)}`;
+
+/* The real thing. Four writes and a wait, in an order chosen so that a
+   failure never leaves a half-built brand visible: the row is created as
+   'processing', which the library filters out, and only the extraction
+   itself moves it to 'review' where a person can see it. */
+async function submitJobLive(file){
+  const job = {
+    id: "job-" + (++jobSeq), name: file.name, size: fileSize(file.size),
+    stage: 0, status: "running", started: Date.now(), file, stages: LIVE_STAGES
+  };
+  state.jobs.unshift(job);
+  logActivity("Upload started", job.name);
+  toast("Uploading", job.name);
+  if (state.view === "admin") renderAll();
+
+  const step = i => { job.stage = i; paintJob(job); };
+
+  try{
+    /* 1 — the brand record, so everything else has something to hang off */
+    const name = brandNameFromFile(file.name);
+    const { data: brand, error: bErr } = await SB.from("brands")
+      .insert({ name, slug: await uniqueSlug(name), status: "processing" })
+      .select("id").single();
+    if (bErr) throw new Error(writeError(bErr, "create the brand record"));
+    job.brand_id = brand.id;
+
+    /* 2 — the file itself, into the private bucket */
+    step(1);
+    const key = storageKeyFor(brand.id, file.name);
+    const up = await SB.storage.from(GUIDES_BUCKET)
+      .upload(key, file, { contentType: "application/pdf", upsert: true });
+    if (up.error){
+      await SB.from("brands").delete().eq("id", brand.id);   // don't leave a stub behind
+      throw new Error(writeError(up.error, "upload the PDF"));
+    }
+
+    /* 3 — the note saying where the file is */
+    step(2);
+    const { error: dErr } = await SB.from("documents").insert({
+      brand_id: brand.id, filename: file.name, storage_key: key,
+      size_bytes: file.size, uploaded_by: state.user ? state.user.id : null
+    });
+    if (dErr) throw new Error(writeError(dErr, "file the document"));
+
+    /* 4 — the slow part */
+    step(3);
+    const { data: out, error: fErr } = await SB.functions.invoke("extract-brand", {
+      body: { brand_id: brand.id, storage_key: key, bucket: GUIDES_BUCKET }
+    });
+    if (fErr) throw new Error(await invokeError(fErr));
+    if (out && out.ok === false) throw new Error(out.error || "The extraction reported a failure.");
+
+    /* 5 — read back what it wrote, so the review screen shows the database
+           rather than whatever we hoped it would say */
+    step(4);
+    await loadLibrary();
+    job.status = "done";
+    job.finished = Date.now();
+    state.jobs = state.jobs.filter(j => j !== job);
+
+    const made = state.brands.find(b => b.uuid === brand.id);
+    logActivity("Extraction finished", made
+      ? `${made.name} · ${made.source.confidence}% confidence · ${allColors(made).length} colours`
+      : job.name);
+    if (state.view === "admin"){ state.tab = "review"; renderAll(); }
+    else toast("Ready for review", made ? made.name : job.name);
+
+  }catch(err){
+    job.status = "failed";
+    job.error = (err && err.message) || String(err);
+    job.finished = Date.now();
+    logActivity("Extraction failed", `${job.name} · ${job.error}`);
+    toast("Extraction failed", job.name, null, true);
+    if (state.view === "admin") renderAll(true);
+  }
+}
+
+/* The mockup, unchanged: no file leaves the browser and the palette comes
+   from a hash of its bytes. */
+async function submitJobDemo(file){
   const job = {
     id: "job-" + (++jobSeq),
     name: file ? file.name : "sample-brand-guide.pdf",
     size: file ? fileSize(file.size) : "9.6 MB",
-    stage: 0, status: "running", started: Date.now(), file
+    stage: 0, status: "running", started: Date.now(), file, stages: DEMO_STAGES
   };
   state.jobs.unshift(job);
   logActivity("Uploaded", job.name);
@@ -1649,21 +1979,26 @@ function paintJob(job){
 }
 
 function jobCardHTML(job){
-  const total = PIPELINE.length;
-  const pct = Math.round((job.stage / total) * 100);
+  const stages = job.stages || DEMO_STAGES;
+  const total = stages.length;
+  const failed = job.status === "failed";
   const done = job.status === "review";
-  const label = done ? "Extraction complete" : PIPELINE[job.stage][0];
+  const pct = done ? 100 : Math.round((job.stage / total) * 100);
+  const label = failed ? stages[job.stage] + " — failed"
+              : done   ? "Extraction complete"
+                       : stages[job.stage];
   return `<div class="job-head">
       <span class="file-ico">PDF</span>
       <span class="file-meta"><b>${esc(job.name)}</b><span>${esc(job.size)} · submitted ${timeAgo(job.started)}</span></span>
-      <span class="chip ${done ? "good" : ""}">${done ? "Awaiting review" : "Processing"}</span>
+      <span class="chip ${failed ? "bad" : done ? "good" : ""}">${failed ? "Failed" : done ? "Awaiting review" : "Processing"}</span>
       ${EXTRACTION_IS_REAL ? "" : '<span class="chip bad">Simulated — not reading your PDF</span>'}
     </div>
-    <div class="bar"><i style="width:${done ? 100 : pct}%"></i></div>
-    <div class="job-stage">${done ? "✓" : '<span class="spin"></span>'}
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="job-stage">${failed ? "✕" : done ? "✓" : '<span class="spin"></span>'}
       <span>${esc(label)}</span>
       <span class="ms mono" style="margin-left:auto">${done ? total + "/" + total : job.stage + "/" + total} steps</span>
-    </div>`;
+    </div>
+    ${failed ? `<div class="danger-box" style="margin-top:12px">${esc(job.error || "Something went wrong.")}</div>` : ""}`;
 }
 
 const timeAgo = t => {
@@ -1823,10 +2158,16 @@ function adminUpload(page){
   page.appendChild(input);
 
   const row = el("div","meta-row"); row.style.marginTop = "14px";
-  const sample = el("button","btn","Run a sample guide instead");
-  sample.onclick = () => { submitJob(null); state.tab = "queue"; renderAll(); };
-  row.appendChild(sample);
-  row.appendChild(el("span","hint",`No file leaves your browser in this mockup.`));
+  /* the sample guide is a hash of nothing — offering it against a real project
+     would just put an invented brand in a real library */
+  if (!LIVE){
+    const sample = el("button","btn","Run a sample guide instead");
+    sample.onclick = () => { submitJob(null); state.tab = "queue"; renderAll(); };
+    row.appendChild(sample);
+  }
+  row.appendChild(el("span","hint", LIVE
+    ? `Uploads go to the private ${GUIDES_BUCKET} bucket. Nothing is published until you approve it.`
+    : `No file leaves your browser in this mockup.`));
   page.appendChild(row);
 
   const steps = el("div","section");
@@ -1841,10 +2182,13 @@ function adminUpload(page){
 }
 
 function adminQueue(page){
-  const jobs = state.jobs.filter(j => j.status === "running");
+  const jobs = state.jobs.filter(j => j.status === "running" || j.status === "failed");
+  const running = jobs.filter(j => j.status === "running").length;
   const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Processing</h3><span class="count">${jobs.length} running</span></div>
-    <p class="sec-sub">Each job runs the same pipeline. Timings here are illustrative; a real 90-page guide takes a few minutes.</p>`;
+  head.innerHTML = `<div class="sec-head"><h3>Processing</h3><span class="count">${running} running</span></div>
+    <p class="sec-sub">${LIVE
+      ? "Reading the PDF and asking the model is one step, and the slow one — around twenty seconds for a short guide, longer for a long one. Keep this tab open until it finishes."
+      : "Each job runs the same pipeline. Timings here are illustrative; a real 90-page guide takes a few minutes."}</p>`;
   page.appendChild(head);
 
   if (!jobs.length){
@@ -1855,16 +2199,37 @@ function adminQueue(page){
     const card = el("div","job");
     card.setAttribute("data-job", j.id);
     card.innerHTML = jobCardHTML(j);
+    /* a failed job is a dead end — let it be cleared away rather than sitting
+       in the queue forever pretending to be work in progress */
+    if (j.status === "failed"){
+      const acts = el("div","meta-row"); acts.style.marginTop = "12px";
+      const retry = el("button","btn btn-primary","Try again");
+      retry.onclick = () => { state.jobs = state.jobs.filter(x => x !== j); submitJob(j.file); };
+      const drop = el("button","btn btn-ghost","Dismiss");
+      drop.onclick = () => { state.jobs = state.jobs.filter(x => x !== j); renderAll(true); };
+      acts.append(retry, drop);
+      card.appendChild(acts);
+    }
     page.appendChild(card);
   });
 }
 
+/* Live, a finished extraction is already a row in the database with status
+   'review' — so this tab reads the database, not a list held in this tab's
+   memory. That is what makes it survive a refresh, and what makes two admins
+   see the same queue. Offline it still reads the in-memory jobs. */
+function reviewEntries(){
+  return LIVE
+    ? state.brands.filter(b => b.status === "review").map(d => ({ d }))
+    : state.jobs.filter(j => j.status === "review").map(j => ({ d: j.draft, job: j }));
+}
+
 function adminReview(page){
-  const jobs = state.jobs.filter(j => j.status === "review");
+  const entries = reviewEntries();
   const head = el("div","section");
-  head.innerHTML = `<div class="sec-head"><h3>Needs review</h3><span class="count">${jobs.length} waiting</span></div>
+  head.innerHTML = `<div class="sec-head"><h3>Needs review</h3><span class="count">${entries.length} waiting</span></div>
     <p class="sec-sub">What the extraction proposes, and how sure it is. Everything marked ⚙ was calculated rather than read off the page — check those before anything goes to a printer.</p>`;
-  if (!EXTRACTION_IS_REAL && jobs.length){
+  if (!EXTRACTION_IS_REAL && entries.length){
     head.appendChild(el("div","danger-box",
       `<b>These values did not come from your PDF.</b>
        They were generated from the file's bytes, not read from its pages. Every colour, typeface and logo rule
@@ -1873,18 +2238,19 @@ function adminReview(page){
   }
   page.appendChild(head);
 
-  if (!jobs.length){
+  if (!entries.length){
     page.appendChild(el("div","empty","Nothing waiting. Finished extractions land here for approval."));
     return;
   }
 
-  jobs.forEach(job => {
-    const d = job.draft;
+  entries.forEach(({ d, job }) => {
     const low = d._proposed.filter(c => c.conf < 75).length;
+    const when = job ? "extracted " + timeAgo(job.finished) : "extracted " + d.source.extracted;
+    const faces = [...d.type.digital, ...d.type.print];
     const card = el("div","job");
     card.innerHTML = `<div class="job-head">
         <span class="file-ico">PDF</span>
-        <span class="file-meta"><b>${esc(d.name)}</b><span>${esc(job.name)} · ${d.source.pages} pages · extracted ${timeAgo(job.finished)}</span></span>
+        <span class="file-meta"><b>${esc(d.name)}</b><span>${esc(job ? job.name : d.source.file)} · ${d.source.pages} pages · ${esc(when)}</span></span>
         <span class="chip ${EXTRACTION_IS_REAL ? (d.source.confidence>=90?"good":d.source.confidence>=80?"warn":"bad") : "bad"}">${EXTRACTION_IS_REAL ? d.source.confidence + "% confidence" : "invented values"}</span>
         ${low ? `<span class="flag">${low} field${low>1?"s":""} to check</span>` : ""}
       </div>
@@ -1893,35 +2259,49 @@ function adminReview(page){
           <div class="eyebrow" style="margin-bottom:8px">Proposed palette · ${d._proposed.length}</div>
           ${d._proposed.map(c => {
             const tone = c.conf>=85 ? "good" : c.conf>=70 ? "warn" : "bad";
+            /* a CMYK build the guide printed is worth more than one we worked
+               out, so say which this is rather than showing a bare number */
+            const build = c.cmyk ? `${esc(c.cmyk)} CMYK 📄` : `${cmykStr(c.hex)} CMYK ⚙`;
+            const pant = c.pantone ? ` · ${esc(c.pantone)} 📄` : "";
             return `<div class="rev-row">
               <i class="rev-sw" style="background:${c.hex}"></i>
-              <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${cmykStr(c.hex)} CMYK ⚙</span></span>
+              <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${build}${pant}</span></span>
               <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${EXTRACTION_IS_REAL ? c.conf + "%" : "sample"}</span>
             </div>`;
           }).join("")}
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:8px">Proposed type</div>
-          <div class="rev-row"><span class="rev-meta"><b style="font-family:${d.type.digital[0].stack}">${esc(d.type.digital[0].family)}</b><span>display · from the embedded font table</span></span></div>
-          <div class="rev-row"><span class="rev-meta"><b style="font-family:${d.type.digital[1].stack}">${esc(d.type.digital[1].family)}</b><span>body · from the embedded font table</span></span></div>
-          <div class="eyebrow" style="margin:16px 0 8px">Proposed logo rules</div>
-          <div class="rev-row"><span class="rev-meta"><b>${esc(d.logo.minDigital)} / ${esc(d.logo.minPrint)}</b><span>minimum size, screen and print ⚙</span></span></div>
+          <div class="eyebrow" style="margin-bottom:8px">Proposed type · ${faces.length}</div>
+          ${faces.length ? faces.slice(0, 4).map(t => `
+            <div class="rev-row"><span class="rev-meta">
+              <b style="font-family:${t.stack}">${esc(t.family)}</b>
+              <span>${esc((t.role || "text").toLowerCase())} · from the embedded font table</span>
+            </span></div>`).join("")
+            : `<div class="rev-row"><span class="rev-meta"><b>No typefaces read</b><span>the file may have no embedded font table</span></span></div>`}
+          <div class="eyebrow" style="margin:16px 0 8px">Proposed logo rules · ${d.logo.dos.length + d.logo.donts.length}</div>
+          <div class="rev-row"><span class="rev-meta"><b>${esc(d.logo.minDigital)}</b><span>minimum size, as the guide words it</span></span></div>
         </div>
       </div>`;
 
     const acts = el("div","meta-row"); acts.style.marginTop = "14px";
     const pub = el("button","btn btn-primary","Approve and publish");
-    pub.onclick = () => finishJob(job, "published");
-    const draft = el("button","btn","Keep as draft");
-    draft.onclick = () => finishJob(job, "review");
+    pub.onclick = () => job ? finishJob(job, "published") : publishBrand(d, true);
+    /* Live, a draft is already saved — there is nothing to keep. Offer to open
+       it instead, which is what you actually want before approving. */
+    const second = el("button","btn", job ? "Keep as draft" : "Open and check");
+    second.onclick = () => job ? finishJob(job, "review") : go(d.id);
     const kill = el("button","btn btn-ghost","Discard");
     kill.onclick = () => {
-      state.jobs = state.jobs.filter(j => j !== job);
-      logActivity("Discarded extraction", d.name);
-      toast("Discarded", d.name, null, true);
-      renderAll(true);
+      if (job){
+        state.jobs = state.jobs.filter(j => j !== job);
+        logActivity("Discarded extraction", d.name);
+        toast("Discarded", d.name, null, true);
+        renderAll(true);
+      } else {
+        openDeleteBrand(d);   // deleting real rows asks for the name first
+      }
     };
-    acts.append(pub, draft, kill);
+    acts.append(pub, second, kill);
     card.appendChild(acts);
     page.appendChild(card);
   });
@@ -1936,6 +2316,25 @@ function finishJob(job, status){
   logActivity(status === "published" ? "Published" : "Saved as draft", d.name);
   toast(status === "published" ? "Published to the library" : "Saved as a draft", d.name, allColors(d)[0].hex);
   go(d.id);
+}
+
+/* Publishing is the one write that changes what the public can see, so live
+   it goes to the database and the screen only follows once that succeeded. */
+async function publishBrand(brand, open){
+  const next = brand.status === "published" ? "review" : "published";
+  if (LIVE){
+    const { error } = await SB.from("brands").update({ status: next }).eq("id", brand.uuid);
+    if (error){
+      toast("Couldn't change that", writeError(error, "publish this brand"), null, true);
+      return;
+    }
+  }
+  brand.status = next;
+  logActivity(next === "published" ? "Published" : "Unpublished", brand.name);
+  toast(next === "published" ? "Published to the library" : "Unpublished", brand.name,
+        next === "published" ? allColors(brand)[0].hex : null);
+  if (open && next === "published") go(brand.id);
+  else renderAll(true);
 }
 
 function adminBrands(page){
@@ -1964,12 +2363,7 @@ function adminBrands(page){
     const open = el("button","btn btn-ghost","Open");
     open.onclick = () => go(b.id);
     const toggle = el("button","btn", b.status === "published" ? "Unpublish" : "Publish");
-    toggle.onclick = () => {
-      b.status = b.status === "published" ? "review" : "published";
-      logActivity(b.status === "published" ? "Published" : "Unpublished", b.name);
-      toast(b.status === "published" ? "Published" : "Unpublished", b.name);
-      renderAll(true);
-    };
+    toggle.onclick = () => publishBrand(b);
     const del = el("button","btn btn-danger","Delete");
     del.onclick = () => openDeleteBrand(b);
     actions.append(open, toggle, del);
@@ -2004,9 +2398,26 @@ function openDeleteBrand(brand){
   setTimeout(() => input.focus(), 60);
 }
 
-function deleteBrand(brand){
+async function deleteBrand(brand){
   /* release any object URLs held by uploaded assets so they don't leak */
   brand.assets.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
+
+  if (LIVE && brand.uuid){
+    /* the file first: deleting the brand cascades the rows that say where the
+       file is, and an orphaned PDF in a private bucket is worse than a slow
+       delete — nothing left would know it was there to remove it */
+    for (const a of brand.assets.filter(x => x.storage_key)){
+      const { error } = await SB.storage.from(a.bucket || GUIDES_BUCKET).remove([a.storage_key]);
+      if (error) console.warn("could not remove", a.storage_key, error.message);
+    }
+    const { error } = await SB.from("brands").delete().eq("id", brand.uuid);
+    if (error){
+      toast("Couldn't delete that", writeError(error, "delete this brand"), null, true);
+      closeAll(); pendingDelete = null;
+      return;
+    }
+  }
+
   state.brands = state.brands.filter(b => b !== brand);
   logActivity("Deleted", brand.name);
   toast("Deleted", brand.name, null, true);
@@ -2077,9 +2488,22 @@ document.addEventListener("keydown", e => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){ e.preventDefault(); $("#search").focus(); $("#search").select(); }
 });
 
+/* Live, the four fictional brands are scaffolding — they must not be standing
+   in the library when the real one arrives, or someone will read them as real.
+   Clear them first, then load whatever the database is willing to show us. */
+async function boot(){
+  if (!LIVE){ renderAll(); return; }
+  state.brands = [];
+  renderAll();
+  /* who we are decides what loads, and adopting a session loads the library
+     itself — so only fetch here when there was no session to come back to */
+  const resumed = await restoreSession();
+  if (!resumed) await loadLibrary();
+  renderAll();
+}
+
 paintMode();
-renderAll();
-restoreSession();
+boot();
 </script>
 </body>
 </html>
