@@ -290,9 +290,11 @@ Deno.serve(async (req: Request) => {
     if (!brand_id || !storage_key) return json({ error: "brand_id and storage_key are required" }, 400);
 
     const url = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-      ?? Deno.env.get("SUPABASE_SECRET_KEY");
-    if (!serviceKey) throw new Error("No service key available to this function. Add SUPABASE_SERVICE_ROLE_KEY under Edge Functions -> Secrets.");
+    /* Supabase is replacing service_role with secret keys, so prefer the new
+       one and fall back to the legacy name while it still exists. */
+    const serviceKey = Deno.env.get("SUPABASE_SECRET_KEY")
+      ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceKey) throw new Error("No service key available. Add SUPABASE_SECRET_KEY (an sb_secret_… key) under Edge Functions -> Secrets.");
     const db = createClient(url, serviceKey);
 
     /* 1 — fetch the PDF out of the private bucket */

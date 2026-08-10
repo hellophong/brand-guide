@@ -28,7 +28,7 @@ Edge Functions → **Secrets**:
 | Key | Value |
 | --- | --- |
 | `OPENAI_API_KEY` | your `sk-…` key |
-| `SUPABASE_SERVICE_ROLE_KEY` | from Settings → API Keys. Only ever here, never in the website |
+| `SUPABASE_SECRET_KEY` | an `sb_secret_…` key from Settings → API Keys → Publishable and secret. Only ever here, never in the website. The legacy `SUPABASE_SERVICE_ROLE_KEY` still works if that is what you have |
 | `OPENAI_MODEL` | *optional.* Defaults to `gpt-5.4-nano`. Set it to whatever your account actually offers |
 | `MAX_PAGES` | *optional.* Defaults to 60 |
 
@@ -60,7 +60,7 @@ A good response looks like:
 | `OPENAI_API_KEY is not set` | Add it under Secrets |
 | `OpenAI rejected the request (404)` | The model name doesn't exist for your account. Set `OPENAI_MODEL` |
 | `Could not read brand-guides/…` | Wrong storage key, or the file isn't in that bucket |
-| `No service key available` | Add `SUPABASE_SERVICE_ROLE_KEY` under Secrets |
+| `No service key available` | Add `SUPABASE_SECRET_KEY` under Secrets |
 | Times out | Very large PDF. Lower `MAX_PAGES` |
 
 ## How the colour ranking works, and where it can be wrong
