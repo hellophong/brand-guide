@@ -20,9 +20,13 @@
    ========================================================================== */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as pdfjs from "https://esm.sh/pdfjs-dist@4/legacy/build/pdf.mjs";
 
-const OPS = pdfjs.OPS;
+/* unpdf is pdf.js packaged for serverless runtimes. Importing pdf.js directly
+   fails here: it wants a background worker, Deno has none, and its fallback
+   tries to import a worker module that isn't published at that path
+   ("Setting up fake worker failed"). unpdf ships a build without that step. */
+import { getDocumentProxy, getResolvedPDFJS } from "https://esm.sh/unpdf";
+
 const MODEL = Deno.env.get("OPENAI_MODEL") ?? "gpt-5.4-nano";
 const MAX_PAGES = Number(Deno.env.get("MAX_PAGES") ?? 60);
 const MAX_TEXT = 120_000;         // characters of page text sent to the model
@@ -48,9 +52,8 @@ const near = (a: string, b: string, tol = 6) => {
 
 /* ------------------------------------------------------- stage 1: reading */
 async function readPdf(data: Uint8Array) {
-  const pdf = await pdfjs.getDocument({
-    data, useSystemFonts: false, disableFontFace: true, isEvalSupported: false
-  }).promise;
+  const pdf: any = await getDocumentProxy(data);
+  const { OPS } = await getResolvedPDFJS();   // the operator constants we match on
 
   const pageCount = pdf.numPages;
   const pages = Math.min(pageCount, MAX_PAGES);

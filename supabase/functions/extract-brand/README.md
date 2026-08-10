@@ -62,6 +62,8 @@ A good response looks like:
 | `Could not read brand-guides/…` | Wrong storage key, or the file isn't in that bucket |
 | `No service key available` | Add `SUPABASE_SECRET_KEY` under Secrets |
 | Times out | Very large PDF. Lower `MAX_PAGES` |
+| `Bucket not found` | The `brand-guides` bucket does not exist yet. Create it under Storage, or pass a `bucket` field in the request |
+| `Setting up fake worker failed` | An older build that imported pdf.js directly. Redeploy the current version, which uses unpdf |
 
 ## How the colour ranking works, and where it can be wrong
 
