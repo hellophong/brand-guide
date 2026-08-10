@@ -74,6 +74,8 @@
 }
 
 *{box-sizing:border-box}
+/* the hidden attribute must beat any display rule a component sets */
+[hidden]{display:none !important}
 html,body{height:100%}
 body{
   margin:0; background:var(--canvas); color:var(--text);
@@ -443,6 +445,16 @@ button{cursor:pointer;border:none;background:none}
 .sso{display:flex;gap:8px;margin-bottom:16px}
 .sso .btn{flex:1;justify-content:center}
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--text-faint);font-size:11px;font-weight:700;letter-spacing:.06em}
+.login-error{
+  margin:0 0 14px;padding:10px 12px;border-radius:6px;font-size:13px;line-height:1.45;
+  background:var(--bad-soft);color:var(--bad);border-left:3px solid var(--bad);
+}
+.mode-pill{
+  font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;background:var(--raised-2);color:var(--text-faint);
+}
+.mode-pill.live{background:var(--good-soft);color:var(--good)}
+.mode-pill.demo{background:var(--warn-soft);color:var(--warn)}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
 /* dropzone */
@@ -520,7 +532,7 @@ button{cursor:pointer;border:none;background:none}
 <div class="app">
   <!-- library sidebar -->
   <aside class="sidebar">
-    <div class="sb-head"><span class="dot"></span><h1>Spectra</h1><span class="eyebrow" style="margin-left:auto">Library</span></div>
+    <div class="sb-head"><span class="dot"></span><h1>Spectra</h1><span class="mode-pill" id="modePill" style="margin-left:auto">…</span></div>
     <div class="sb-search">
       <input id="search" type="search" placeholder="Search brands, colors, fonts" aria-label="Search the library">
     </div>
@@ -551,28 +563,35 @@ button{cursor:pointer;border:none;background:none}
       <p>Sign in to publish and edit brands.</p>
     </div>
     <div class="modal-body">
-      <div class="sso">
+      <div class="sso" id="ssoRow">
         <button class="btn" style="flex:1;justify-content:center" data-sso="Google Workspace">Google Workspace</button>
         <button class="btn" style="flex:1;justify-content:center" data-sso="Okta">Okta SSO</button>
       </div>
-      <div class="divider">OR</div>
+      <div class="divider" id="ssoDivider">OR</div>
       <form id="loginForm">
         <div class="field">
           <label for="loginEmail">Email</label>
-          <input id="loginEmail" type="email" value="studio@spectra.design" autocomplete="username">
+          <input id="loginEmail" type="email" autocomplete="username" required>
         </div>
         <div class="field">
           <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" value="demo-password" autocomplete="current-password">
+          <input id="loginPass" type="password" autocomplete="current-password" required>
         </div>
-        <button class="btn btn-primary btn-lg" type="submit" style="width:100%;justify-content:center">Sign in</button>
+        <p class="login-error" id="loginError" role="alert" hidden></p>
+        <button class="btn btn-primary btn-lg" id="loginSubmit" type="submit" style="width:100%;justify-content:center">Sign in</button>
       </form>
-      <p class="hint">Mockup — any credentials sign you in as <code>Admin</code>. Real builds swap this for the identity provider described in ARCHITECTURE.md.</p>
+      <p class="hint" id="loginHint"></p>
     </div>
   </div>
 </div>
 
 <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<!-- Your Supabase settings, and the client library that talks to it.
+     If either fails to load the app falls back to demo mode rather than
+     showing a broken page. -->
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" crossorigin="anonymous"></script>
 
 <script>
 "use strict";
@@ -864,6 +883,7 @@ const state = {
   tab: "all",
   typeMode: "digital",
   admin: false,
+  user: null,      // the signed-in Supabase user, when running live
   jobs: [],        // extraction jobs, running or awaiting review
   activity: [],    // audit trail
   query: "",
@@ -982,9 +1002,14 @@ function renderSidebar(){
   }
 
   const u = $("#sbUser");
-  u.innerHTML = state.admin
-    ? `<div class="avatar admin">SD</div>
-       <div class="sb-user-meta"><b>Studio Admin</b><span>Can publish · Can edit</span></div>
+  const email = state.user && state.user.email;
+  const initials = email ? email.slice(0,2).toUpperCase() : "GU";
+  u.innerHTML = state.user || state.admin
+    ? `<div class="avatar${state.admin ? " admin" : ""}">${esc(initials)}</div>
+       <div class="sb-user-meta">
+         <b>${esc(email || "Studio Admin")}</b>
+         <span>${state.admin ? "Can publish · Can edit" : "Signed in · Read only"}</span>
+       </div>
        <button class="icon-btn" id="logoutBtn" title="Sign out" aria-label="Sign out">⏻</button>`
     : `<div class="avatar">GU</div>
        <div class="sb-user-meta"><b>Guest</b><span>Read only</span></div>
@@ -1394,20 +1419,131 @@ function renderHow(page){
 /* =============================================================
    8. AUTH
    ============================================================= */
+/* ---- live or demo? -------------------------------------------------------
+   LIVE needs three things: config.js filled in, the Supabase library loaded,
+   and the values shaped like real ones. Missing any of them, the app runs as
+   the demo it has always been rather than showing a broken page. */
+const CFG = window.SPECTRA_CONFIG || {};
+const CONFIGURED =
+  /^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(CFG.SUPABASE_URL || "") &&
+  /^(sb_publishable_|eyJ)/.test(CFG.SUPABASE_KEY || "");
+const SB = (CONFIGURED && window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(CFG.SUPABASE_URL.replace(/\/$/, ""), CFG.SUPABASE_KEY)
+  : null;
+const LIVE = !!SB;
+
+function paintMode(){
+  const pill = $("#modePill");
+  pill.className = "mode-pill " + (LIVE ? "live" : "demo");
+  pill.textContent = LIVE ? "Live" : "Demo";
+  pill.title = LIVE
+    ? "Signed-in accounts are real. Brand data is still the built-in sample set."
+    : (CONFIGURED ? "Could not load the Supabase library — running on sample data."
+                  : "config.js is not filled in — running on sample data.");
+  $("#ssoRow").hidden = LIVE;          /* neither provider is configured yet */
+  $("#ssoDivider").hidden = LIVE;
+  $("#loginHint").innerHTML = LIVE
+    ? "Use the email and password of a user in your Supabase project. Admin powers come from a row in the <code>admins</code> table, not from signing in."
+    : "Demo — any email and password signs you in. Fill in <code>config.js</code> to use real accounts.";
+  /* keep the demo one-click; live mode must start empty so nobody submits a
+     placeholder address by accident */
+  if (!LIVE){
+    $("#loginEmail").value = "studio@spectra.design";
+    $("#loginPass").value  = "demo-password";
+  }
+}
+
 function openLogin(msg){
   $("#loginModal").classList.add("open");
-  if (msg) toast(msg, null, null, true);
+  showLoginError(msg || "");
   setTimeout(()=>$("#loginEmail").focus(), 60);
 }
 function closeAll(){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("open")); }
-function signIn(how){
-  state.admin = true; closeAll(); renderAll();
-  toast(how ? `Signed in with ${how}` : "Signed in as Studio Admin", "publish + edit unlocked");
+function showLoginError(msg){
+  const box = $("#loginError");
+  box.textContent = msg || "";
+  box.hidden = !msg;
 }
-function signOut(){ state.admin = false; renderAll(); toast("Signed out", "back to read-only"); }
 
-$("#loginForm").addEventListener("submit", e => { e.preventDefault(); signIn(); });
-document.querySelectorAll("[data-sso]").forEach(b => b.onclick = () => signIn(b.dataset.sso));
+/* Signing in and being an admin are deliberately separate. The first is
+   "who are you", the second is a row in the admins table. */
+async function isAdminUser(user){
+  try{
+    const { data, error } = await SB.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+    if (error) { console.warn("admin check failed:", error.message); return false; }
+    return !!data;
+  }catch(e){ console.warn("admin check failed:", e); return false; }
+}
+
+async function adoptSession(session, announce){
+  state.user = session ? session.user : null;
+  state.admin = false;
+  if (session){
+    state.admin = await isAdminUser(session.user);
+    if (announce){
+      if (state.admin) toast("Signed in", session.user.email);
+      else toast("Signed in, but not an admin", "ask an admin to add you", null, true);
+    }
+  }
+  renderAll();
+}
+
+async function signInWithPassword(email, password){
+  const btn = $("#loginSubmit");
+  btn.disabled = true; btn.textContent = "Signing in…";
+  showLoginError("");
+  try{
+    const { data, error } = await SB.auth.signInWithPassword({ email, password });
+    if (error){
+      showLoginError(
+        /invalid login/i.test(error.message)
+          ? "That email and password don't match an account in this project."
+          : /email not confirmed/i.test(error.message)
+          ? "That account hasn't confirmed its email address yet. Confirm it in Supabase under Authentication → Users."
+          : error.message
+      );
+      return;
+    }
+    closeAll();
+    await adoptSession(data.session, true);
+  }catch(e){
+    /* a paused free project, a wrong URL, or no internet all land here */
+    showLoginError("Couldn't reach Supabase. Check the project is running and that config.js has the right URL.");
+    console.warn(e);
+  }finally{
+    btn.disabled = false; btn.textContent = "Sign in";
+  }
+}
+
+function demoSignIn(how){
+  state.admin = true; state.user = { email: "studio@spectra.design" };
+  closeAll(); renderAll();
+  toast(how ? `Signed in with ${how}` : "Signed in as Studio Admin", "demo — publish + edit unlocked");
+}
+
+async function signOut(){
+  if (LIVE){ try{ await SB.auth.signOut(); }catch(e){ console.warn(e); } }
+  state.admin = false; state.user = null;
+  renderAll();
+  toast("Signed out", "back to read-only");
+}
+
+$("#loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const email = $("#loginEmail").value.trim(), password = $("#loginPass").value;
+  if (LIVE) signInWithPassword(email, password);
+  else demoSignIn();
+});
+document.querySelectorAll("[data-sso]").forEach(b => b.onclick = () => demoSignIn(b.dataset.sso));
+
+/* Come back to a still-valid session instead of making people sign in again. */
+async function restoreSession(){
+  if (!LIVE) return;
+  try{
+    const { data } = await SB.auth.getSession();
+    if (data && data.session) await adoptSession(data.session, false);
+  }catch(e){ console.warn("session restore failed:", e); }
+}
 
 /* =============================================================
    9. UPLOAD + EXTRACTION
@@ -1829,7 +1965,9 @@ document.addEventListener("keydown", e => {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){ e.preventDefault(); $("#search").focus(); $("#search").select(); }
 });
 
+paintMode();
 renderAll();
+restoreSession();
 </script>
 </body>
 </html>
