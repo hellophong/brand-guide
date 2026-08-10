@@ -2107,7 +2107,12 @@ function proposeBrand(meta){
    9b. ADMIN PORTAL
    ============================================================= */
 const jobsRunning = () => state.jobs.filter(j => j.status === "running").length;
-const jobsToReview = () => state.jobs.filter(j => j.status === "review").length;
+/* Live, a finished extraction is a draft in the database, not a job held in
+   this tab — so the badge has to count the same thing the Needs review tab
+   shows, or the portal advertises work that isn't there (and vice versa). */
+const jobsToReview = () => LIVE
+  ? state.brands.filter(b => b.status === "review").length
+  : state.jobs.filter(j => j.status === "review").length;
 const adminAttention = () => jobsRunning() + jobsToReview();
 
 function renderAdmin(page){
@@ -2335,9 +2340,23 @@ function finishJob(job, status){
 async function publishBrand(brand, open){
   const next = brand.status === "published" ? "review" : "published";
   if (LIVE){
-    const { error } = await SB.from("brands").update({ status: next }).eq("id", brand.uuid);
+    /* .select() matters here. Without it an update that matches no rows comes
+       back with no error, and we would cheerfully tell you it published while
+       the database never changed. Row-level security filters rather than
+       refuses, so "no rows" is exactly what a permissions problem looks like:
+       silence. Ask for the rows back and treat an empty answer as a failure. */
+    const { data, error } = await SB.from("brands")
+      .update({ status: next }).eq("id", brand.uuid).select("id, status");
     if (error){
       toast("Couldn't change that", writeError(error, "publish this brand"), null, true);
+      return;
+    }
+    if (!data || !data.length){
+      toast("Nothing was saved",
+        "The database accepted the request but changed no rows — usually your account is signed in but not in the admins table. Sign out and back in, then try again.",
+        null, true);
+      await loadLibrary();          // put the screen back in step with the truth
+      renderAll(true);
       return;
     }
   }
@@ -2422,9 +2441,13 @@ async function deleteBrand(brand){
       const { error } = await SB.storage.from(a.bucket || GUIDES_BUCKET).remove([a.storage_key]);
       if (error) console.warn("could not remove", a.storage_key, error.message);
     }
-    const { error } = await SB.from("brands").delete().eq("id", brand.uuid);
-    if (error){
-      toast("Couldn't delete that", writeError(error, "delete this brand"), null, true);
+    /* same trap as publishing: a delete that matches nothing is not an error */
+    const { data, error } = await SB.from("brands").delete().eq("id", brand.uuid).select("id");
+    if (error || !data || !data.length){
+      toast("Couldn't delete that",
+        error ? writeError(error, "delete this brand")
+              : "The database changed no rows — check your account is in the admins table.",
+        null, true);
       closeAll(); pendingDelete = null;
       return;
     }
