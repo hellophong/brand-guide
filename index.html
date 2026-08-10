@@ -170,6 +170,15 @@ button{cursor:pointer;border:none;background:none}
 .btn:hover{background:var(--line)}
 .btn-primary{background:var(--accent);color:var(--on-accent)}
 .btn-primary:hover{background:var(--accent-hover)}
+.btn-danger{background:transparent;color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.btn-danger:hover{background:var(--bad);color:#fff}
+.btn-danger[disabled]{opacity:.45;pointer-events:none}
+.danger-box{
+  padding:12px 14px;border-radius:var(--radius);background:var(--bad-soft);
+  border-left:3px solid var(--bad);margin-bottom:18px;font-size:13px;line-height:1.6;
+}
+.danger-box b{color:var(--bad)}
+.danger-box ul{margin:8px 0 0;padding-left:18px;color:var(--text-dim)}
 .btn-ghost{background:transparent;color:var(--text-dim)}
 .btn-ghost:hover{background:var(--raised);color:var(--text)}
 .btn-lg{height:40px;padding:0 20px;font-size:14.5px}
@@ -581,6 +590,29 @@ button{cursor:pointer;border:none;background:none}
         <button class="btn btn-primary btn-lg" id="loginSubmit" type="submit" style="width:100%;justify-content:center">Sign in</button>
       </form>
       <p class="hint" id="loginHint"></p>
+    </div>
+  </div>
+</div>
+
+<!-- delete a brand -->
+<div class="overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="delTitle">
+  <div class="modal">
+    <div class="modal-head left">
+      <h3 id="delTitle">Delete this brand?</h3>
+      <p id="delSub"></p>
+    </div>
+    <div class="modal-body">
+      <div class="danger-box" id="delSummary"></div>
+      <div class="field">
+        <label for="delConfirm">Type the brand's name to confirm</label>
+        <input id="delConfirm" type="text" autocomplete="off" spellcheck="false">
+      </div>
+      <p class="hint">This cannot be undone. The source PDF and every extracted value go with it.</p>
+    </div>
+    <div class="modal-foot">
+      <span class="spacer"></span>
+      <button class="btn" id="delCancel">Cancel</button>
+      <button class="btn btn-danger" id="delConfirmBtn" disabled>Delete permanently</button>
     </div>
   </div>
 </div>
@@ -1903,13 +1935,58 @@ function adminBrands(page){
       toast(b.status === "published" ? "Published" : "Unpublished", b.name);
       renderAll(true);
     };
-    actions.append(open, toggle);
+    const del = el("button","btn btn-danger","Delete");
+    del.onclick = () => openDeleteBrand(b);
+    actions.append(open, toggle, del);
     body.appendChild(tr);
   });
   tbl.appendChild(body);
   wrap.appendChild(tbl);
   page.appendChild(wrap);
 }
+
+/* Deleting a brand takes its whole record with it, so the dialog spells out
+   what goes and asks for the name to be typed. Only reachable from the admin
+   portal — deliberately not a button sitting next to everyday controls. */
+let pendingDelete = null;
+
+function openDeleteBrand(brand){
+  if (!state.admin) return openLogin("You need admin access to delete a brand.");
+  pendingDelete = brand;
+  const files = brand.assets.length;
+  $("#delSub").textContent = `${brand.name} — ${brand.status === "published" ? "currently published" : "a draft"}.`;
+  $("#delSummary").innerHTML = `<b>This removes everything:</b>
+    <ul>
+      <li>${allColors(brand).length} colours, with their stated CMYK and Pantone values</li>
+      <li>${brand.type.digital.length + brand.type.print.length} type styles across print and digital</li>
+      <li>${brand.logo.dos.length + brand.logo.donts.length} logo rules, clear space and minimum sizes</li>
+      <li>${files} file${files === 1 ? "" : "s"}, including the source guide</li>
+    </ul>`;
+  const input = $("#delConfirm"), btn = $("#delConfirmBtn");
+  input.value = ""; btn.disabled = true;
+  input.oninput = () => { btn.disabled = input.value.trim() !== brand.name; };
+  $("#deleteModal").classList.add("open");
+  setTimeout(() => input.focus(), 60);
+}
+
+function deleteBrand(brand){
+  /* release any object URLs held by uploaded assets so they don't leak */
+  brand.assets.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
+  state.brands = state.brands.filter(b => b !== brand);
+  logActivity("Deleted", brand.name);
+  toast("Deleted", brand.name, null, true);
+  closeAll();
+  pendingDelete = null;
+  /* if you were looking at it, you can't stay there */
+  if (state.view === brand.id) go("admin", "brands");
+  else renderAll(true);
+}
+
+$("#delCancel").onclick = () => { pendingDelete = null; closeAll(); };
+$("#delConfirmBtn").onclick = () => { if (pendingDelete) deleteBrand(pendingDelete); };
+$("#delConfirm").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !$("#delConfirmBtn").disabled){ e.preventDefault(); $("#delConfirmBtn").click(); }
+});
 
 function adminActivity(page){
   const head = el("div","section");
