@@ -62,13 +62,29 @@ The specimens render in the real faces they name. Seven families ship inside `in
 
 All seven are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org), which permits embedding. They stand in for the retail faces a real guide would specify — those are licensed per-seat and cannot be bundled. A production build serves the client's own licensed webfonts the same way, from its asset bucket.
 
-## What's real and what's simulated
+## Two modes, and how to tell them apart
 
-Real: clipboard copy in every format, live WCAG contrast ratios, hex conversion, palette export, search across brand names / colour names / hex values / typefaces, the admin gate, and light and dark themes.
+The pill in the top right says which one you are in.
 
-Simulated: the extraction. Dropping a PDF derives a palette from the file's actual bytes, so different files produce different brands — but it's a hash, not a parser. The pipeline animation shows the real stages in the real order. Downloads are inert and login accepts any credentials.
+**Demo** — `config.js` is not filled in. Everything runs in the browser on four
+fictional brands. Dropping a PDF derives a palette from the file's actual bytes,
+so different files produce different brands, but it's a hash, not a parser. Login
+accepts any credentials and downloads are inert. Every screen that shows invented
+values says so, in red.
 
-The four brands included are fictional, used to show the interface with realistic content.
+**Live** — `config.js` points at a Supabase project. Login is real, the library is
+your database, and dropping a PDF really does upload it to private storage and run
+the extraction: the file's text, embedded font table and vector fills are read, a
+model sorts them, and the result lands in **Needs review** for a person to approve.
+Nothing publishes itself. The four fictional brands are not loaded at all.
+
+Real in both: clipboard copy in every format, live WCAG contrast ratios, hex
+conversion, palette export, search across brand names / colour names / hex values /
+typefaces, the admin gate, and light and dark themes.
+
+What the extraction cannot do: a scanned or flattened guide has no text layer and no
+vector fills, so there is nothing to read. Those come back with few colours and low
+confidence, which is the correct signal that a human should take over.
 
 ## Where to take it next
 

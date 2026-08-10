@@ -44,6 +44,44 @@ const toHex = (r: number, g: number, b: number) =>
   "#" + [r, g, b].map(v => Math.round(Math.max(0, Math.min(1, v)) * 255)
     .toString(16).padStart(2, "0")).join("").toUpperCase();
 
+/* ------------------------------------------------------- writing it safely */
+/* The tables have check constraints on them, and a model is not bound by them.
+   Postgres rejects the whole batch over one bad value, so every field that has
+   a constraint gets coerced here first. This is not being precious: it is the
+   difference between losing one colour and losing an entire extraction. */
+const COLOUR_GROUPS = ["Primary", "Secondary", "Neutral", "Functional"] as const;
+const MEDIA         = ["print", "digital"] as const;
+const RULE_KINDS    = ["do", "dont", "clearspace", "min_size"] as const;
+
+const oneOf = <T extends string>(raw: unknown, allowed: readonly T[], fallback: T): T =>
+  (allowed as readonly string[]).includes(String(raw)) ? String(raw) as T : fallback;
+
+/* hex must match ^#[0-9a-f]{6}$. Shorthand, a missing hash and an alpha
+   channel are all recoverable; anything else is not a colour we can store. */
+function normaliseHex(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  let s = raw.trim().replace(/^0x/i, "");
+  if (!s.startsWith("#")) s = "#" + s;
+  s = s.toUpperCase();
+  if (/^#[0-9A-F]{3}$/.test(s)) s = "#" + [...s.slice(1)].map(ch => ch + ch).join("");
+  if (/^#[0-9A-F]{8}$/.test(s)) s = s.slice(0, 7);          // drop the alpha
+  return /^#[0-9A-F]{6}$/.test(s) ? s : null;
+}
+
+/* confidence is 0-100, and nullable. A model that answers 120 should not be
+   able to fail the write; one that declines to answer should not be recorded
+   as 0% sure, which is a much stronger claim than saying nothing.
+
+   Scaling only applies below 1, never at exactly 1: the schema asks for an
+   integer, so a literal 1 means one percent, not total certainty. */
+function clampConfidence(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  let n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return null;
+  if (n > 0 && n < 1) n = n * 100;                           // 0.85 means 85%
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
 const near = (a: string, b: string, tol = 6) => {
   const p = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const [x, y] = [p(a), p(b)];
@@ -350,20 +388,44 @@ Deno.serve(async (req: Request) => {
     await db.from("typefaces").delete().eq("brand_id", brand_id);
     await db.from("logo_rules").delete().eq("brand_id", brand_id);
 
-    const colors = (proposal.colors ?? []).map((c: any, i: number) => ({
-      brand_id, name: c.name, group_name: c.group, hex: c.hex,
-      cmyk: c.cmyk || null, pantone: c.pantone || null,
-      source: c.source === "stated" ? "stated" : "derived",
-      confidence: c.confidence, found_on_page: c.found_on_page ?? null, sort_order: i
-    }));
-    const typefaces = (proposal.typefaces ?? []).map((t: any, i: number) => ({
-      brand_id, family: t.family, role: t.role, medium: t.medium,
-      specs: t.specs ? { stated: t.specs } : {}, usage: t.usage ?? null,
-      confidence: t.confidence, sort_order: i
-    }));
-    const rules = (proposal.logo_rules ?? []).map((r: any, i: number) => ({
-      brand_id, kind: r.kind, text: r.text, confidence: r.confidence, sort_order: i
-    }));
+    const dropped: string[] = [];
+
+    const colors = (proposal.colors ?? []).flatMap((c: any, i: number) => {
+      const hex = normaliseHex(c.hex);
+      /* One "#FFF" would otherwise take the whole insert down with it and lose
+         a good extraction over a shorthand. Drop the unusable row, keep the
+         rest, and say in the response what went. */
+      if (!hex) { dropped.push(`colour "${c?.name ?? "unnamed"}" (${JSON.stringify(c?.hex)})`); return []; }
+      const name = String(c.name ?? "").trim() || "Unnamed";
+      return [{
+        brand_id, name, group_name: oneOf(c.group, COLOUR_GROUPS, "Secondary"), hex,
+        cmyk: c.cmyk || null, pantone: c.pantone || null,
+        source: c.source === "stated" ? "stated" : "derived",
+        confidence: clampConfidence(c.confidence),
+        found_on_page: Number.isInteger(c.found_on_page) ? c.found_on_page : null,
+        sort_order: i
+      }];
+    });
+
+    const typefaces = (proposal.typefaces ?? []).flatMap((t: any, i: number) => {
+      const family = String(t?.family ?? "").trim();
+      if (!family) { dropped.push("a typeface with no family name"); return []; }
+      return [{
+        brand_id, family, role: t.role ?? null,
+        medium: oneOf(t.medium, MEDIA, "digital"),
+        specs: t.specs ? { stated: t.specs } : {}, usage: t.usage ?? null,
+        confidence: clampConfidence(t.confidence), sort_order: i
+      }];
+    });
+
+    const rules = (proposal.logo_rules ?? []).flatMap((r: any, i: number) => {
+      const text = String(r?.text ?? "").trim();
+      if (!text) { dropped.push("a logo rule with no text"); return []; }
+      return [{
+        brand_id, kind: oneOf(r.kind, RULE_KINDS, "do"), text,
+        confidence: clampConfidence(r.confidence), sort_order: i
+      }];
+    });
 
     for (const [table, rows] of [["colors", colors], ["typefaces", typefaces], ["logo_rules", rules]] as const) {
       if (!rows.length) continue;
@@ -372,8 +434,12 @@ Deno.serve(async (req: Request) => {
     }
 
     /* overall confidence is the weakest link, not the average — one bad field
-       is what sends a wrong colour to a printer */
-    const all = [...colors, ...typefaces, ...rules].map((r: any) => r.confidence ?? 0);
+       is what sends a wrong colour to a printer. Fields the model declined to
+       score are not evidence of anything, so they sit this one out rather than
+       counting as zero. */
+    const all = [...colors, ...typefaces, ...rules]
+      .map((r: any) => r.confidence)
+      .filter((n: unknown): n is number => typeof n === "number");
     const overall = all.length ? Math.min(...all) : 0;
 
     await db.from("brands").update({
@@ -396,6 +462,7 @@ Deno.serve(async (req: Request) => {
       logo_rules: rules.length,
       overall_confidence: overall,
       stated_values_found: stated,
+      dropped,                    // anything the model returned that we could not store
       ms: Date.now() - started
     });
 

@@ -1934,6 +1934,18 @@ async function submitJobLive(file){
     job.status = "failed";
     job.error = (err && err.message) || String(err);
     job.finished = Date.now();
+
+    /* Roll the whole thing back. A brand left at 'processing' is invisible to
+       every screen in the app — it would sit in the database forever with
+       nothing able to show it to you or clean it up. Better to leave no trace
+       and let Try again start cleanly. */
+    if (job.brand_id){
+      try{
+        await SB.storage.from(GUIDES_BUCKET).remove([storageKeyFor(job.brand_id, file.name)]);
+        await SB.from("brands").delete().eq("id", job.brand_id);
+      }catch(cleanupErr){ console.warn("could not roll back the failed upload:", cleanupErr); }
+    }
+
     logActivity("Extraction failed", `${job.name} · ${job.error}`);
     toast("Extraction failed", job.name, null, true);
     if (state.view === "admin") renderAll(true);

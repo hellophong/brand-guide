@@ -302,17 +302,32 @@ Building Step 8 first is the classic mistake. A library nobody browses does not 
 
 ## What stays broken until you do this
 
-For clarity, here's exactly what in the current mockup is theatre:
+This describes the mockup — the site with `config.js` still empty. Fill it in and
+point it at a Supabase project and every row below becomes real; the site tells you
+which mode it is in with the pill in the top right.
 
-| Looks like it works | Actually |
-| --- | --- |
-| Logging in | Accepts any password. There are no accounts. |
-| Uploading a PDF | Never leaves your browser. The palette is generated from the file's raw bytes — a hash, not a reader. |
-| Uploading logos and artwork | Real enough to preview and download, but gone on refresh. |
-| Publishing and approving | Works, but only in that tab. Nobody else sees it. |
-| Hiding drafts from guests | Enforced in the browser only. Not a real lock until Step 4. |
+| Looks like it works | In the mockup | Once configured |
+| --- | --- | --- |
+| Logging in | Accepts any password. There are no accounts. | Real Supabase accounts. Admin means a row in `admins`. |
+| Uploading a PDF | Never leaves your browser. The palette is a hash of the file's raw bytes. | Uploads to the private bucket and is really read — text, font table and vector fills. |
+| Uploading logos and artwork | Real enough to preview and download, but gone on refresh. | Still session-only. This one is genuinely not built yet. |
+| Publishing and approving | Works, but only in that tab. Nobody else sees it. | Writes to the database. Everyone sees it. |
+| Hiding drafts from guests | Enforced in the browser only. | Enforced by row-level security, in the database. |
 
 Everything else — copying colour values, the contrast maths, the palette exports, the type specimens — is genuinely working code that carries over unchanged.
+
+### The one lock that is easy to miss
+
+Migration `0001` fits locks to every table. It does **not** fit them to
+`storage.objects`, the table Supabase keeps uploaded files in — and that table
+arrives with row-level security switched on and no policies, which shuts it to
+everyone including you. The first upload from the site fails with *"new row
+violates row-level security policy"* until you run migration **`0002`**.
+
+`0002` also decides who may download a file, by reading the brand's id out of the
+file's path. That is why uploads are stored as `<brand uuid>/<filename>` — a file
+put in a bucket by hand, sitting at the root, belongs to no brand and stays
+admin-only.
 
 ---
 

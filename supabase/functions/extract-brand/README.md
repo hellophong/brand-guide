@@ -64,6 +64,14 @@ A good response looks like:
 | Times out | Very large PDF. Lower `MAX_PAGES` |
 | `Bucket not found` | The `brand-guides` bucket does not exist yet. Create it under Storage, or pass a `bucket` field in the request |
 | `Setting up fake worker failed` | An older build that imported pdf.js directly. Redeploy the current version, which uses unpdf |
+| `Writing colors failed: … violates check constraint "colors_hex_check"` | An older build. The tables have check constraints and a model is not bound by them, so one `#FFF` used to reject the whole batch and lose the extraction. The current version normalises shorthand, a missing `#` and an alpha channel, and drops anything still unusable — listing it under `dropped` in the response rather than failing |
+
+## `dropped`
+
+The response includes a `dropped` array naming anything the model returned that
+could not be stored — a colour whose hex made no sense, a typeface with no family
+name, a rule with no text. An empty array is the normal case. A long one means the
+model is struggling with that guide, and is worth reading before you approve it.
 
 ## How the colour ranking works, and where it can be wrong
 
