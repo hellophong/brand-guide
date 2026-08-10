@@ -166,29 +166,33 @@ function findStatedValues(text: string) {
 }
 
 /* ---------------------------------------------------------- stage 2: ask */
+/* Strict structured output has a rule that is easy to miss: every key in
+   `properties` must also appear in `required`. Optional fields are expressed
+   as nullable types instead, never by leaving them out of `required` —
+   doing that gets the whole request rejected with a 400. */
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["brand_name", "colors", "typefaces", "logo_rules"],
+  required: ["brand_name", "tagline", "colors", "typefaces", "logo_rules"],
   properties: {
     brand_name: { type: "string" },
-    tagline: { type: "string" },
+    tagline: { type: ["string", "null"] },
     colors: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["name", "hex", "group", "source", "confidence"],
+        required: ["name", "hex", "group", "cmyk", "pantone", "note", "source", "confidence", "found_on_page"],
         properties: {
           name: { type: "string" },
           hex: { type: "string", description: "#RRGGBB" },
           group: { type: "string", enum: ["Primary", "Secondary", "Neutral", "Functional"] },
-          cmyk: { type: "string", description: "only if the guide states it; else empty" },
-          pantone: { type: "string", description: "only if the guide states it; else empty" },
-          note: { type: "string" },
+          cmyk: { type: ["string", "null"], description: "only if the guide states it, else null" },
+          pantone: { type: ["string", "null"], description: "only if the guide states it, else null" },
+          note: { type: ["string", "null"] },
           source: { type: "string", enum: ["stated", "derived"] },
-          confidence: { type: "integer", minimum: 0, maximum: 100 },
-          found_on_page: { type: "integer" }
+          confidence: { type: "integer" },
+          found_on_page: { type: ["integer", "null"] }
         }
       }
     },
@@ -197,14 +201,14 @@ const SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["family", "role", "medium", "confidence"],
+        required: ["family", "role", "medium", "specs", "usage", "confidence"],
         properties: {
           family: { type: "string" },
           role: { type: "string" },
           medium: { type: "string", enum: ["print", "digital"] },
-          specs: { type: "string", description: "size / leading / tracking as stated" },
-          usage: { type: "string" },
-          confidence: { type: "integer", minimum: 0, maximum: 100 }
+          specs: { type: ["string", "null"], description: "size / leading / tracking as stated" },
+          usage: { type: ["string", "null"] },
+          confidence: { type: "integer" }
         }
       }
     },
@@ -217,7 +221,7 @@ const SCHEMA = {
         properties: {
           kind: { type: "string", enum: ["do", "dont", "clearspace", "min_size"] },
           text: { type: "string" },
-          confidence: { type: "integer", minimum: 0, maximum: 100 }
+          confidence: { type: "integer" }
         }
       }
     }
@@ -276,8 +280,12 @@ async function askModel(facts: unknown) {
 
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`OpenAI rejected the request (${res.status}). ${detail.slice(0, 400)}
-If this mentions the model, set OPENAI_MODEL to one your account can use.`);
+    let msg = detail;
+    try { msg = JSON.parse(detail)?.error?.message ?? detail; } catch { /* keep raw */ }
+    throw new Error(
+      `OpenAI rejected the request (${res.status}) using model "${MODEL}": ${String(msg).slice(0, 600)}` +
+      (res.status === 404 ? " — set OPENAI_MODEL to a model your account can use." : "")
+    );
   }
   const body = await res.json();
   return JSON.parse(body.choices[0].message.content);
