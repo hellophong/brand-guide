@@ -1086,12 +1086,17 @@ function renderPage(keepScroll){
   const b = brandById(state.view);
   if (!b) return state.tab==="how" ? renderHow(page) : renderHome(page);
 
-  if (b.status==="review"){
+  /* A simulated brand keeps its warning even once published — approving it
+     does not make invented values true, and by then everyone can see them. */
+  if (b.status==="review" || b.simulated){
     const banner = el("div","banner");
+    if (b.simulated) banner.style.cssText = "background:var(--bad-soft);border-left-color:var(--bad)";
     banner.innerHTML = `<span style="font-size:18px;line-height:1">⚠</span>
-      <div><b>Extracted, not yet approved</b>
-      <p>Spectra read this guide with ${b.source.confidence}% confidence. Values are visible to admins only until someone signs them off. Nothing here should go to a printer yet.</p></div>`;
-    if (state.admin){
+      <div><b>${b.simulated ? "Invented values — not from the PDF" : "Extracted, not yet approved"}</b>
+      <p>${b.simulated
+        ? "Nothing on this page was read from the uploaded document. The colours, type and logo rules were generated from the file's bytes as a demonstration of the review flow. Do not use any of it."
+        : `Spectra read this guide with ${b.source.confidence}% confidence. Values are visible to admins only until someone signs them off. Nothing here should go to a printer yet.`}</p></div>`;
+    if (state.admin && b.status === "review"){
       const btn = el("button","btn btn-primary","Approve and publish");
       btn.onclick = () => { b.status = "published"; renderAll(); toast("Published to the library", b.name, allColors(b)[0].hex); };
       banner.appendChild(btn);
@@ -1583,6 +1588,14 @@ async function restoreSession(){
    you drop, so two different PDFs give two different brands.
    A production build parses the page content instead.
    ============================================================= */
+/* Flip this to true when the real extraction Edge Function is deployed.
+   While it is false, NOTHING here reads the PDF: the palette, the type and
+   the logo rules are generated from a hash of the file's bytes. The interface
+   must say so everywhere, or it is lying to the person using it. */
+const EXTRACTION_IS_REAL = false;
+
+/* Stage names describe the pipeline the real function will run. They are
+   shown with a "simulated" marker until it exists. */
 const PIPELINE = [
   ["Uploading to private storage", 520],
   ["Splitting 1 PDF into pages", 620],
@@ -1644,6 +1657,7 @@ function jobCardHTML(job){
       <span class="file-ico">PDF</span>
       <span class="file-meta"><b>${esc(job.name)}</b><span>${esc(job.size)} · submitted ${timeAgo(job.started)}</span></span>
       <span class="chip ${done ? "good" : ""}">${done ? "Awaiting review" : "Processing"}</span>
+      ${EXTRACTION_IS_REAL ? "" : '<span class="chip bad">Simulated — not reading your PDF</span>'}
     </div>
     <div class="bar"><i style="width:${done ? 100 : pct}%"></i></div>
     <div class="job-stage">${done ? "✓" : '<span class="spin"></span>'}
@@ -1700,6 +1714,7 @@ function proposeBrand(meta){
 
   return {
     id: slug(meta.name) + "-" + (meta.seed % 997),
+    simulated: !EXTRACTION_IS_REAL,
     name: meta.name, short: words[0], monogram, mark: meta.seed % 4, status:"review",
     tagline:"Extracted from " + meta.file + ". Nothing here is approved yet.",
     source:{ file:meta.file, pages:meta.pages, size:meta.size, extracted:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}), confidence:conf, owner:"Studio Admin" },
@@ -1769,6 +1784,19 @@ function adminUpload(page){
   const head = el("div","section");
   head.innerHTML = `<div class="sec-head"><h3>Add a brand guide</h3></div>
     <p class="sec-sub">Drop one or more brand guide PDFs. Each becomes a background job — you can leave this page while they run, and nothing reaches the library until you approve it.</p>`;
+  if (!EXTRACTION_IS_REAL){
+    head.appendChild(el("div","danger-box",
+      `<b>Your PDF is not being read yet.</b>
+       The colours, typefaces and logo rules this produces are <b>invented</b> — generated from a hash of the
+       file's bytes, so each file gives a different but equally fictional brand. They will not match the guide
+       you upload, and the confidence percentages are fabricated too.
+       <ul>
+         <li>Useful for: seeing how the review and approval flow works.</li>
+         <li>Useless for: any real brand value. Do not publish these to people who will trust them.</li>
+       </ul>
+       Real extraction is Step 8 in <code>GO-LIVE.md</code> — the Edge Function that opens the PDF and calls
+       a model. It has not been built.`));
+  }
   page.appendChild(head);
 
   const drop = el("div","drop");
@@ -1836,6 +1864,13 @@ function adminReview(page){
   const head = el("div","section");
   head.innerHTML = `<div class="sec-head"><h3>Needs review</h3><span class="count">${jobs.length} waiting</span></div>
     <p class="sec-sub">What the extraction proposes, and how sure it is. Everything marked ⚙ was calculated rather than read off the page — check those before anything goes to a printer.</p>`;
+  if (!EXTRACTION_IS_REAL && jobs.length){
+    head.appendChild(el("div","danger-box",
+      `<b>These values did not come from your PDF.</b>
+       They were generated from the file's bytes, not read from its pages. Every colour, typeface and logo rule
+       below is fictional, and the percentages are made up rather than measured. Approving one adds a plausible
+       but invented brand to the library.`));
+  }
   page.appendChild(head);
 
   if (!jobs.length){
@@ -1850,7 +1885,7 @@ function adminReview(page){
     card.innerHTML = `<div class="job-head">
         <span class="file-ico">PDF</span>
         <span class="file-meta"><b>${esc(d.name)}</b><span>${esc(job.name)} · ${d.source.pages} pages · extracted ${timeAgo(job.finished)}</span></span>
-        <span class="chip ${d.source.confidence>=90?"good":d.source.confidence>=80?"warn":"bad"}">${d.source.confidence}% confidence</span>
+        <span class="chip ${EXTRACTION_IS_REAL ? (d.source.confidence>=90?"good":d.source.confidence>=80?"warn":"bad") : "bad"}">${EXTRACTION_IS_REAL ? d.source.confidence + "% confidence" : "invented values"}</span>
         ${low ? `<span class="flag">${low} field${low>1?"s":""} to check</span>` : ""}
       </div>
       <div class="rev-grid">
@@ -1861,7 +1896,7 @@ function adminReview(page){
             return `<div class="rev-row">
               <i class="rev-sw" style="background:${c.hex}"></i>
               <span class="rev-meta"><b>${esc(c.name)}</b><span>${c.hex} · ${cmykStr(c.hex)} CMYK ⚙</span></span>
-              <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${c.conf}%</span>
+              <span class="conf" style="background:var(--${tone}-soft);color:var(--${tone})">${EXTRACTION_IS_REAL ? c.conf + "%" : "sample"}</span>
             </div>`;
           }).join("")}
         </div>
