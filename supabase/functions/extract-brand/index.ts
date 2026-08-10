@@ -308,6 +308,24 @@ Deno.serve(async (req: Request) => {
     if (!serviceKey) throw new Error("No service key available. Add SUPABASE_SECRET_KEY (an sb_secret_… key) under Edge Functions -> Secrets.");
     const db = createClient(url, serviceKey);
 
+    /* 0 — check the target before doing anything expensive. Reading a large
+           PDF and calling a model, only to fail on the very last write, wastes
+           a minute and real money. */
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID.test(String(brand_id))) {
+      return json({
+        ok: false,
+        error: `brand_id must be the uuid of a row in the brands table, but got "${brand_id}".` +
+          (/\.pdf$/i.test(String(brand_id))
+            ? " That looks like a filename — it belongs in storage_key, not brand_id."
+            : " Run: select id, name from public.brands;")
+      }, 400);
+    }
+    const { data: brandRow } = await db.from("brands").select("id").eq("id", brand_id).maybeSingle();
+    if (!brandRow) {
+      return json({ ok: false, error: `No brand with id ${brand_id}. Create one first, or check the id.` }, 400);
+    }
+
     /* 1 — fetch the PDF out of the private bucket */
     const dl = await db.storage.from(bucket).download(storage_key);
     if (dl.error) throw new Error(`Could not read ${bucket}/${storage_key}: ${dl.error.message}`);
